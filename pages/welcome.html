@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seiza — Sign In</title>
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+  <div class="centered-page">
+    <div id="welcome-card" class="welcome-card"></div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/db.js"></script>
+  <script src="../js/storage.js"></script>
+  <script src="../js/quiz.js"></script>
+  <script src="../js/welcome.js"></script>
+  <script>
+    (async () => {
+      const state = await loadState();
+      if (state) {
+        location.href = "../index.html";
+        return;
+      }
+
+      initWelcome(document.getElementById("welcome-card"), {
+        // Returns true to mean "new profile, go on to the quiz" — false
+        // means an existing profile with that name was found, and this
+        // already signed in as them and is redirecting away.
+        onNameSubmit: async name => {
+          let existing;
+          try {
+            existing = await dbLoadProfile(name);
+          } catch (e) {
+            alert(`Couldn't reach the database: ${e.message}`);
+            return true;
+          }
+          if (!existing) return true;
+
+          setProfileKey(name);
+          location.href = "../index.html";
+          return false;
+        },
+
+        onComplete: async (name, answers) => {
+          const newState = createStateFromAnswers(name, answers);
+          setProfileKey(name);
+          try {
+            await saveStateNow(name, newState);
+          } catch (e) {
+            alert(`Couldn't reach the database: ${e.message}`);
+            clearProfileKey();
+            return;
+          }
+          location.href = "../index.html";
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

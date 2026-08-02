@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seiza — Admin</title>
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+  <div class="admin-wrap">
+    <a href="../index.html" class="back-link">&larr; Back to map</a>
+    <h1>Node Overview</h1>
+    <p class="admin-intro">
+      Everything defined in code, by branch — nodes already on your map, plus ones
+      still waiting in the library. Read-only for now; search and adding nodes here
+      comes later.
+    </p>
+
+    <div class="admin-controls">
+      <label for="branch-select">Branch</label>
+      <select id="branch-select"></select>
+    </div>
+
+    <div id="admin-list" class="admin-list"></div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/library.js"></script>
+  <script>
+    const branchSelect = document.getElementById("branch-select");
+    const adminList = document.getElementById("admin-list");
+    const allDefinedNodes = NODES.concat(LIBRARY_NODES);
+
+    function nodesForBranch(branchId) {
+      const onMap = NODES.filter(n => n.branch === branchId).map(n => ({ ...n, status: "map" }));
+      const inLibrary = LIBRARY_NODES.filter(n => n.branch === branchId).map(n => ({ ...n, status: "library" }));
+      return onMap.concat(inLibrary);
+    }
+
+    // Branch count shown right in the dropdown, so with dozens of
+    // branches you can see how populated each one is without opening it.
+    branchSelect.innerHTML = `<option value="all">All branches</option>` + Object.keys(BRANCHES)
+      .map(id => `<option value="${id}">${BRANCHES[id].label} (${nodesForBranch(id).length})</option>`)
+      .join("");
+
+    function nodeCardHtml(n) {
+      return `
+        <div class="admin-node-card">
+          <div class="admin-node-head">
+            <h3>${n.name}</h3>
+            <span class="admin-badge admin-badge-${n.status}">${n.status === "map" ? "On map" : "In library"}</span>
+          </div>
+          <p class="admin-node-desc">${n.description}</p>
+          <p class="admin-node-deps">
+            ${n.dependsOn.length
+              ? "Depends on: " + n.dependsOn.map(id => (allDefinedNodes.find(p => p.id === id) || {}).name || id).join(", ")
+              : "Starting point — no dependencies"}
+          </p>
+        </div>
+      `;
+    }
+
+    function renderAdminList() {
+      const branchId = branchSelect.value;
+
+      if (branchId === "all") {
+        adminList.innerHTML = Object.keys(BRANCHES).map(id => {
+          const nodes = nodesForBranch(id);
+          return `
+            <div class="admin-branch-section">
+              <h2 class="admin-branch-heading" style="color:${BRANCHES[id].color}">
+                ${BRANCHES[id].label} <span class="admin-branch-count">${nodes.length}</span>
+              </h2>
+              ${nodes.length ? nodes.map(nodeCardHtml).join("") : `<p class="admin-empty">Nothing defined yet.</p>`}
+            </div>
+          `;
+        }).join("");
+        return;
+      }
+
+      const nodes = nodesForBranch(branchId);
+      adminList.innerHTML = nodes.length
+        ? nodes.map(nodeCardHtml).join("")
+        : `<p class="admin-empty">Nothing defined for this branch yet.</p>`;
+    }
+
+    branchSelect.addEventListener("change", renderAdminList);
+    renderAdminList();
+  </script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seiza</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <header>
+    <div class="header-left">
+      <h1 class="site-title">Seiza</h1>
+      <button id="profile-name" class="profile-name" title="Click to rename"></button>
+    </div>
+    <div class="header-progress">
+      <span id="overall-progress" class="overall-progress"></span>
+    </div>
+    <div class="header-actions">
+      <a href="pages/library.html" class="btn-link">Library</a>
+      <a href="pages/settings.html" class="btn-link">Settings</a>
+    </div>
+  </header>
+
+  <div id="branch-progress" class="branch-progress"></div>
+
+  <main>
+    <div class="graph-wrap">
+      <div class="map-search">
+        <input type="text" id="map-search-input" placeholder="Search the sky...">
+      </div>
+      <svg id="star-map" viewBox="0 0 1200 1200" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="zoom-controls">
+        <button id="zoom-in" aria-label="Zoom in">+</button>
+        <button id="zoom-out" aria-label="Zoom out">&minus;</button>
+      </div>
+    </div>
+
+    <aside id="side-panel" class="side-panel"></aside>
+  </main>
+
+  <div id="toast-container"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/progress.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/library.js"></script>
+  <script src="js/graph.js"></script>
+  <script src="js/panel.js"></script>
+  <script src="js/toast.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

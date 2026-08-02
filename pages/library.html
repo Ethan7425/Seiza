@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seiza — Library</title>
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+  <div class="centered-page">
+    <div class="library-card">
+      <a href="../index.html" class="back-link">&larr; Back to map</a>
+      <div id="library-content"></div>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/db.js"></script>
+  <script src="../js/storage.js"></script>
+  <script src="../js/library.js"></script>
+  <script src="../js/libraryPage.js"></script>
+  <script>
+    let state;
+
+    (async () => {
+      state = await loadState();
+      if (!state) {
+        location.href = "welcome.html";
+        return;
+      }
+      initLibraryPage(document.getElementById("library-content"), {
+        onAdd: handleAddLibraryNode,
+        isAdded: id => state.addedLibraryIds.includes(id)
+      });
+    })();
+
+    function handleAddLibraryNode(nodeId) {
+      if (state.addedLibraryIds.includes(nodeId)) return;
+      const template = LIBRARY_NODES.find(n => n.id === nodeId);
+      if (!template) return;
+
+      const pos = placeNode(template, buildActiveNodes(state));
+      state.addedLibraryIds.push(nodeId);
+      state.nodePositions[nodeId] = pos;
+      state.progress[nodeId] = { stage: "locked", notes: "", proof: [], updatedAt: null };
+      saveState(state);
+
+      refreshLibraryResults();
+    }
+  </script>
+</body>
+</html>

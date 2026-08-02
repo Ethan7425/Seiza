@@ -1,0 +1,1275 @@
+/* ---- Reset ---- */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* No accidental text-highlight while clicking/dragging around the UI
+   (panning the map, clicking nodes, etc) — but typing areas stay
+   normal, since you still need to select/edit text there. */
+body {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+input,
+textarea {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* ---- Palette ---- */
+:root {
+  --bg-deep: #0d0a1f;
+  --bg-canvas-a: #1a1533;
+  --bg-canvas-b: #0d0a1f;
+  --ink: #cfc9e0;
+  --ink-dim: #4a4560;
+  --ink-faint: #8880a8;
+  --panel-bg: #161029;
+  --accent-warm: #d8a05c;
+  --danger: #c4685f;
+  --line-color: rgba(200, 190, 230, 0.4);
+  --border-soft: rgba(207, 201, 224, 0.12);
+  --shadow-card: 0 12px 32px rgba(4, 3, 12, 0.45);
+  --shadow-soft: 0 4px 14px rgba(4, 3, 12, 0.3);
+}
+
+body {
+  color: var(--ink);
+  font-family: system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  background-color: var(--bg-deep);
+  background-image:
+    radial-gradient(ellipse 900px 500px at 50% -10%, #241c47 0%, transparent 70%),
+    radial-gradient(1.5px 1.5px at 40px 60px, rgba(207, 201, 224, 0.55), transparent),
+    radial-gradient(1px 1px at 140px 20px, rgba(207, 201, 224, 0.4), transparent),
+    radial-gradient(1.5px 1.5px at 220px 130px, rgba(207, 201, 224, 0.5), transparent),
+    radial-gradient(1px 1px at 300px 90px, rgba(207, 201, 224, 0.35), transparent),
+    radial-gradient(1px 1px at 80px 180px, rgba(207, 201, 224, 0.3), transparent),
+    radial-gradient(1.5px 1.5px at 260px 220px, rgba(207, 201, 224, 0.45), transparent),
+    radial-gradient(1px 1px at 10px 250px, rgba(207, 201, 224, 0.3), transparent),
+    radial-gradient(1px 1px at 180px 280px, rgba(207, 201, 224, 0.4), transparent);
+  background-repeat: no-repeat, repeat, repeat, repeat, repeat, repeat, repeat, repeat, repeat;
+  background-size: 100% 700px, 320px 320px, 320px 320px, 320px 320px, 320px 320px, 320px 320px, 320px 320px, 320px 320px, 320px 320px;
+}
+
+h1, h2, h3 {
+  font-family: Georgia, serif;
+  font-weight: normal;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  background: none;
+  border: 1px solid var(--border-soft);
+  color: var(--ink);
+  border-radius: 4px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--accent-warm);
+  color: var(--accent-warm);
+  background: rgba(216, 160, 92, 0.08);
+}
+
+button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* ---- Header ---- */
+header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 2rem;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.header-left {
+  display: flex;
+  align-items: baseline;
+  gap: 0.9rem;
+}
+
+.site-title {
+  letter-spacing: 0.15em;
+  font-size: 1.3rem;
+  text-shadow: 0 0 18px rgba(216, 160, 92, 0.25);
+}
+
+.profile-name {
+  border: none;
+  padding: 0;
+  font-size: 0.9rem;
+  color: var(--ink-faint);
+}
+
+.profile-name:hover {
+  color: var(--accent-warm);
+  border: none;
+}
+
+.overall-progress {
+  font-size: 0.85rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.03em;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.btn-link {
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid var(--border-soft);
+  color: var(--ink);
+  border-radius: 4px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.btn-link:hover {
+  border-color: var(--accent-warm);
+  color: var(--accent-warm);
+  background: rgba(216, 160, 92, 0.08);
+}
+
+/* ---- Branch progress bars ---- */
+.branch-progress {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.branch-bar {
+  flex: 1 1 180px;
+  min-width: 160px;
+}
+
+.branch-bar-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+  margin-bottom: 0.35rem;
+}
+
+.branch-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.branch-bar-pct {
+  margin-left: auto;
+}
+
+.branch-bar-track {
+  height: 5px;
+  background: var(--border-soft);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.branch-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s ease, box-shadow 0.6s ease;
+  opacity: 0.85;
+  box-shadow: 0 0 8px currentColor;
+}
+
+/* ---- Main layout ---- */
+main {
+  display: flex;
+  align-items: flex-start;
+  padding: 1.5rem 2rem 2rem;
+  gap: 1.5rem;
+}
+
+.graph-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+#star-map {
+  width: 100%;
+  height: min(85vh, 1000px);
+  display: block;
+  background: radial-gradient(ellipse at center, var(--bg-canvas-a) 0%, var(--bg-canvas-b) 100%);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  box-shadow: var(--shadow-card), inset 0 0 90px rgba(0, 0, 0, 0.45);
+  touch-action: none;
+}
+
+.zoom-controls {
+  position: absolute;
+  right: 0.8rem;
+  bottom: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.zoom-controls button {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--bg-deep);
+  padding: 0;
+  line-height: 1;
+}
+
+.map-search {
+  position: absolute;
+  top: 0.8rem;
+  left: 0.8rem;
+  z-index: 2;
+}
+
+.map-search input {
+  width: 12rem;
+  padding: 0.4rem 0.7rem;
+  background: var(--bg-deep);
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.8rem;
+}
+
+.map-search input:focus {
+  outline: none;
+  border-color: var(--accent-warm);
+}
+
+/* ---- Nebulas (branch theme regions) ---- */
+.nebula {
+  pointer-events: none;
+}
+
+.nebula-label {
+  font-size: 13px;
+  text-anchor: middle;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* A branch that exists but has nothing added from it yet — a faint
+   trace rather than nothing at all, so it stays discoverable. */
+.ghost-branch {
+  pointer-events: none;
+}
+
+.ghost-branch-ring {
+  fill: none;
+  stroke-width: 1;
+  stroke-dasharray: 2 5;
+  animation: ghost-pulse 5s ease-in-out infinite;
+}
+
+.ghost-branch-label {
+  font-size: 12px;
+  text-anchor: middle;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.3;
+}
+
+@keyframes ghost-pulse {
+  0%, 100% { opacity: 0.18; }
+  50% { opacity: 0.38; }
+}
+
+/* ---- Background stars ---- */
+.bg-star {
+  fill: var(--ink);
+  pointer-events: none;
+}
+
+/* ---- Connections ---- */
+.connection {
+  fill: none;
+  stroke: var(--line-color);
+  transition: stroke 0.6s ease, opacity 0.6s ease;
+}
+
+/* Leads to a node you can't reach yet — dashed and muted so it reads
+   as an inactive path rather than a live one. */
+.connection.blocked {
+  stroke: var(--ink-dim);
+  stroke-dasharray: 3 6;
+}
+
+/* ---- Nodes ---- */
+.node {
+  cursor: pointer;
+  transition: opacity 0.4s ease;
+}
+
+/* Map search: fade out everything except name matches. */
+.node.dimmed {
+  opacity: 0.15;
+}
+
+.node.search-match {
+  filter: drop-shadow(0 0 6px var(--accent-warm));
+}
+
+/* One-shot ring burst played when a node reaches "mastered". */
+.node-burst {
+  fill: none;
+  stroke: var(--accent-warm);
+  stroke-width: 2;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  pointer-events: none;
+}
+
+.node-burst.bursting {
+  animation: node-burst-play 0.9s ease-out;
+}
+
+@keyframes node-burst-play {
+  0% { opacity: 0.9; transform: scale(0.6); }
+  100% { opacity: 0; transform: scale(3); }
+}
+
+.node:focus {
+  outline: none;
+}
+
+.node:focus .node-core {
+  stroke: var(--accent-warm);
+  stroke-width: 2;
+}
+
+.node-core {
+  fill: var(--ink);
+  stroke: none;
+  filter: drop-shadow(0 0 3px rgba(207, 201, 224, 0.45));
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: opacity 0.6s ease, fill 0.6s ease, stroke 0.3s ease, r 0.6s ease;
+  animation: breathe 4.5s ease-in-out infinite;
+}
+
+/* A little life at rest — paused on hover in favor of a fixed enlarge,
+   and switched off entirely for locked nodes so they read as dormant. */
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+.node[data-stage="locked"] .node-core {
+  animation: none;
+}
+
+.node:hover .node-core {
+  animation-play-state: paused;
+  transform: scale(1.2);
+}
+
+.node:hover .node-label {
+  opacity: 1;
+}
+
+.node:not([data-stage="locked"]):not([data-stage="mastered"]):hover .node-ring {
+  opacity: 0.5;
+  stroke: var(--ink);
+}
+
+.node-branch-dot {
+  opacity: 0.95;
+}
+
+.node-label {
+  fill: var(--ink);
+  font-size: 12px;
+  text-anchor: middle;
+  opacity: 0.82;
+  transition: opacity 0.6s ease;
+  paint-order: stroke;
+  stroke: var(--bg-canvas-b);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.node-ring {
+  fill: none;
+  stroke: var(--accent-warm);
+  stroke-width: 1.3;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.node-halo {
+  fill: var(--accent-warm);
+  opacity: 0;
+  filter: blur(5px);
+  transition: opacity 0.8s ease;
+}
+
+/* Marks a branch's entry point(s) — always visible, at every stage,
+   so it's clear at a glance where each theme's chain begins. */
+.node-start-marker {
+  fill: none;
+  stroke: var(--ink-faint);
+  stroke-width: 1;
+  stroke-dasharray: 2 4;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* Stage: how "lit" a node is */
+.node[data-stage="locked"] .node-core {
+  fill: none;
+  stroke: var(--ink-dim);
+  stroke-width: 1.5;
+  opacity: 0.65;
+  filter: none;
+}
+.node[data-stage="locked"] .node-label {
+  opacity: 0.45;
+}
+.node[data-stage="locked"] .node-branch-dot {
+  opacity: 0.3;
+}
+
+.node[data-stage="unlockable"] .node-core {
+  opacity: 0.65;
+  animation: pulse 2.4s ease-in-out infinite;
+}
+
+.node[data-stage="curious"] .node-core { opacity: 0.55; }
+
+/* The one you're actively working on — a warm blink layered on top of
+   the usual idle "breathe" animation so it reads as distinct from
+   both that and the "unlockable" pulse. */
+.node[data-stage="learning"] .node-core {
+  opacity: 0.68;
+  animation: breathe 4.5s ease-in-out infinite, learning-blink 1.6s ease-in-out infinite;
+}
+
+@keyframes learning-blink {
+  0%, 100% { filter: drop-shadow(0 0 3px rgba(207, 201, 224, 0.45)); }
+  50% { opacity: 1; filter: drop-shadow(0 0 9px rgba(216, 160, 92, 0.85)); }
+}
+
+.node[data-stage="comfortable"] .node-core { opacity: 0.8; }
+
+.node[data-stage="solid"] .node-core { opacity: 0.92; }
+.node[data-stage="solid"] .node-ring {
+  opacity: 0.3;
+  stroke: var(--ink);
+}
+
+.node[data-stage="mastered"] .node-core {
+  opacity: 1;
+  fill: var(--accent-warm);
+  filter: drop-shadow(0 0 5px rgba(216, 160, 92, 0.7));
+}
+.node[data-stage="mastered"] .node-label {
+  opacity: 1;
+}
+.node[data-stage="mastered"] .node-ring {
+  opacity: 0.85;
+}
+.node[data-stage="mastered"] .node-halo {
+  opacity: 0.25;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.8; }
+}
+
+/* ---- Side panel ---- */
+.side-panel {
+  width: 330px;
+  flex-shrink: 0;
+  background: var(--panel-bg);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-card);
+  transform: translateX(20px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  max-height: min(85vh, 1000px);
+  overflow-y: auto;
+  position: relative;
+}
+
+.side-panel.open {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.panel-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  border: none;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.2rem 0.4rem;
+}
+
+.panel-branch {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+}
+
+.panel-title {
+  font-size: 1.3rem;
+  margin-bottom: 0.6rem;
+  padding-right: 1.5rem;
+}
+
+.panel-title-locked {
+  color: var(--ink-faint);
+  margin-top: 1.6rem;
+}
+
+.panel-desc {
+  font-size: 0.88rem;
+  color: var(--ink-faint);
+  line-height: 1.5;
+  margin-bottom: 1.1rem;
+}
+
+.panel-stage {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--border-soft);
+  margin-bottom: 0.5rem;
+}
+
+.stage-label {
+  font-size: 0.9rem;
+  letter-spacing: 0.03em;
+}
+
+.stage-label[data-stage="mastered"] {
+  color: var(--accent-warm);
+}
+
+.stage-dots {
+  display: flex;
+  gap: 0.3rem;
+  margin-top: 0.45rem;
+}
+
+.stage-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--border-soft);
+  transition: background 0.4s ease;
+}
+
+.stage-dot.filled {
+  background: var(--accent-warm);
+}
+
+.stage-controls {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.stage-btn {
+  width: 1.9rem;
+  height: 1.9rem;
+  padding: 0;
+  line-height: 1;
+}
+
+.panel-updated {
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+  margin-bottom: 1rem;
+}
+
+.panel-locked-note {
+  font-size: 0.82rem;
+  color: var(--ink-faint);
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.panel-locked-note strong {
+  color: var(--ink);
+  font-weight: normal;
+}
+
+.panel-remove-blocked {
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+  line-height: 1.5;
+}
+
+.panel-remove-blocked strong {
+  color: var(--ink);
+  font-weight: normal;
+}
+
+.panel-remove-btn {
+  width: 100%;
+}
+
+.panel-section-remove {
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-soft);
+}
+
+.panel-section {
+  margin-bottom: 1.1rem;
+}
+
+.panel-section h3 {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 0.5rem;
+}
+
+.panel-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+}
+
+.panel-list li {
+  color: var(--ink-faint);
+}
+
+.panel-list li.is-mastered {
+  color: var(--accent-warm);
+}
+
+.panel-notes {
+  width: 100%;
+  min-height: 5rem;
+  resize: vertical;
+  background: var(--bg-deep);
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  padding: 0.6rem;
+}
+
+.panel-notes:focus {
+  outline: none;
+  border-color: var(--accent-warm);
+}
+
+.proof-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.7rem;
+}
+
+.proof-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  background: var(--bg-deep);
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+}
+
+.proof-text {
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.proof-date {
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+  margin-top: 0.2rem;
+}
+
+.proof-remove {
+  border: none;
+  padding: 0 0.2rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.proof-empty {
+  font-size: 0.82rem;
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+.proof-add {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.proof-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.5rem 0.6rem;
+  background: var(--bg-deep);
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.82rem;
+}
+
+.proof-input:focus {
+  outline: none;
+  border-color: var(--accent-warm);
+}
+
+.proof-add-btn {
+  flex-shrink: 0;
+}
+
+/* ---- Standalone pages (welcome / settings / library) ----
+   These are real pages, not modals, so this just centers whatever
+   card sits on them over the shared starfield body background. */
+.centered-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.back-link {
+  display: inline-block;
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+  text-decoration: none;
+  margin-bottom: 1.2rem;
+}
+
+.back-link:hover {
+  color: var(--accent-warm);
+}
+
+.welcome-card {
+  width: min(90vw, 380px);
+  padding: 2.5rem 2rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  text-align: center;
+  background: var(--panel-bg);
+  box-shadow: var(--shadow-card);
+}
+
+.welcome-card h1 {
+  font-size: 1.6rem;
+  letter-spacing: 0.15em;
+  margin-bottom: 0.6rem;
+}
+
+.welcome-card p {
+  color: var(--ink-faint);
+  font-size: 0.9rem;
+  margin-bottom: 1.6rem;
+}
+
+.welcome-card label {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+  text-align: left;
+  margin-bottom: 0.4rem;
+}
+
+.welcome-card input {
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  background: var(--bg-deep);
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  color: var(--ink);
+  font-size: 0.9rem;
+  margin-bottom: 1.4rem;
+}
+
+.welcome-card input:focus {
+  outline: none;
+  border-color: var(--accent-warm);
+}
+
+.welcome-card .btn-primary {
+  width: 100%;
+  padding: 0.6rem;
+  border-color: var(--accent-warm);
+  color: var(--accent-warm);
+}
+
+.welcome-card .btn-primary:hover {
+  background: var(--accent-warm);
+  color: var(--bg-deep);
+}
+
+/* ---- Welcome quiz ---- */
+.quiz-progress {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 0.6rem;
+}
+
+.quiz-question {
+  font-size: 1.05rem;
+  line-height: 1.4;
+  margin-bottom: 1.3rem;
+  text-align: left;
+}
+
+.quiz-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1.4rem;
+}
+
+.quiz-option {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+  border-color: var(--border-soft);
+}
+
+.quiz-option:hover {
+  background: rgba(216, 160, 92, 0.08);
+}
+
+.quiz-nav {
+  display: flex;
+  justify-content: space-between;
+}
+
+.quiz-nav button {
+  border: none;
+  color: var(--ink-faint);
+  font-size: 0.78rem;
+  padding: 0.3rem 0.2rem;
+}
+
+.quiz-nav button:hover {
+  color: var(--accent-warm);
+  border: none;
+}
+
+/* ---- Settings ---- */
+.settings-card {
+  position: relative;
+  width: min(90vw, 420px);
+  padding: 2rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--panel-bg);
+  box-shadow: var(--shadow-card);
+}
+
+.settings-card h2 {
+  font-size: 1.2rem;
+  letter-spacing: 0.08em;
+  margin-bottom: 1.4rem;
+}
+
+.settings-section {
+  padding: 1rem 0;
+  border-top: 1px solid var(--border-soft);
+}
+
+.settings-section:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.settings-section h3 {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 0.5rem;
+}
+
+.settings-section p {
+  font-size: 0.85rem;
+  color: var(--ink-faint);
+  line-height: 1.5;
+  margin-bottom: 0.9rem;
+}
+
+.settings-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.btn-danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.btn-danger:hover {
+  background: var(--danger);
+  color: var(--bg-deep);
+  border-color: var(--danger);
+}
+
+/* ---- Library page ---- */
+.library-card {
+  position: relative;
+  width: min(92vw, 620px);
+  max-height: min(85vh, 720px);
+  padding: 2rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--panel-bg);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#library-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+#library-content h2 {
+  font-size: 1.2rem;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+}
+
+.library-intro {
+  font-size: 0.85rem;
+  color: var(--ink-faint);
+  line-height: 1.5;
+  margin-bottom: 1.2rem;
+}
+
+.library-search-input {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  background: var(--bg-deep);
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.9rem;
+  margin-bottom: 1.2rem;
+  flex-shrink: 0;
+}
+
+.library-search-input:focus {
+  outline: none;
+  border-color: var(--accent-warm);
+}
+
+.library-groups {
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.library-group {
+  margin-bottom: 1.3rem;
+}
+
+.library-group h3 {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.6rem;
+}
+
+.library-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.library-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 0.9rem;
+  background: var(--bg-deep);
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+}
+
+.library-item-name {
+  font-size: 0.9rem;
+  margin-bottom: 0.2rem;
+}
+
+.library-item-desc {
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+  line-height: 1.4;
+}
+
+.library-add-btn {
+  flex-shrink: 0;
+}
+
+.library-empty {
+  font-size: 0.85rem;
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+/* ---- Admin page ---- */
+.admin-wrap {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+}
+
+.admin-wrap h1 {
+  font-size: 1.5rem;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.6rem;
+}
+
+.admin-intro {
+  color: var(--ink-faint);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  margin-bottom: 1.6rem;
+  max-width: 60ch;
+}
+
+.admin-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 1.6rem;
+}
+
+.admin-controls label {
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+}
+
+.admin-controls select {
+  font-family: inherit;
+  font-size: 0.88rem;
+  padding: 0.45rem 0.7rem;
+  background: var(--panel-bg);
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  color: var(--ink);
+}
+
+.admin-controls select:focus {
+  outline: none;
+  border-color: var(--accent-warm);
+}
+
+.admin-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.admin-node-card {
+  padding: 1rem 1.2rem;
+  background: var(--panel-bg);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  box-shadow: var(--shadow-soft);
+}
+
+.admin-node-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 0.4rem;
+}
+
+.admin-node-head h3 {
+  font-size: 1rem;
+}
+
+.admin-badge {
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: 3px;
+  border: 1px solid var(--border-soft);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.admin-badge-map {
+  color: var(--accent-warm);
+  border-color: var(--accent-warm);
+}
+
+.admin-badge-library {
+  color: var(--ink-faint);
+}
+
+.admin-node-desc {
+  font-size: 0.85rem;
+  color: var(--ink-faint);
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+}
+
+.admin-node-deps {
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+.admin-empty {
+  font-size: 0.85rem;
+  color: var(--ink-faint);
+  font-style: italic;
+  margin-bottom: 0.8rem;
+}
+
+.admin-branch-section {
+  margin-bottom: 2.2rem;
+}
+
+.admin-branch-section .admin-node-card {
+  margin-bottom: 0.8rem;
+}
+
+.admin-branch-heading {
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.admin-branch-count {
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+  font-weight: normal;
+}
+
+/* ---- Toasts ---- */
+#toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.5rem;
+  z-index: 200;
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--panel-bg);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  padding: 0.6rem 1.1rem;
+  font-size: 0.85rem;
+  color: var(--ink);
+  white-space: nowrap;
+  box-shadow: var(--shadow-soft);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.toast.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast-mastered {
+  border-color: var(--accent-warm);
+  color: var(--accent-warm);
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 760px) {
+  header {
+    padding: 1rem 1.2rem;
+  }
+
+  .branch-progress {
+    padding: 1rem 1.2rem;
+  }
+
+  main {
+    flex-direction: column;
+    padding: 1rem 1.2rem 1.5rem;
+  }
+
+  #star-map {
+    height: 65vh;
+  }
+
+  .side-panel {
+    width: 100%;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-height: 60vh;
+    border-radius: 12px 12px 0 0;
+    transform: translateY(100%);
+  }
+
+  .side-panel.open {
+    transform: translateY(0);
+  }
+}
