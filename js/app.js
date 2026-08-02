@@ -23,6 +23,11 @@ function runMapPage(state) {
   ACTIVE_NODES = buildActiveNodes(state);
   profileNameEl.textContent = state.profileName;
 
+  // Seeded with whatever's already unlocked at load — only achievements
+  // earned *after* this point should get a toast, not everything you
+  // already qualified for before this feature existed.
+  let unlockedAchievementIds = new Set(getUnlockedAchievements(state, ACTIVE_NODES).map(a => a.id));
+
   initGraph(svgEl, { onNodeClick: nodeId => openPanel(nodeId, state.progress) });
   initPanel(panelEl, {
     onStageChange: handleStageChange,
@@ -30,6 +35,7 @@ function runMapPage(state) {
     onProofAdd: handleProofAdd,
     onProofRemove: handleProofRemove,
     onRemoveNode: handleRemoveNode,
+    onQuantityChange: handleQuantityChange,
     isCoreNode: nodeId => NODES.some(n => n.id === nodeId)
   });
   initToasts(toastContainerEl);
@@ -61,6 +67,11 @@ function runMapPage(state) {
 
   function handleNotesChange(nodeId, text) {
     state.progress[nodeId].notes = text;
+    saveState(state);
+  }
+
+  function handleQuantityChange(nodeId, text) {
+    state.progress[nodeId].quantity = text;
     saveState(state);
   }
 
@@ -101,6 +112,16 @@ function runMapPage(state) {
   function refreshAll() {
     refreshNodeStates(state.progress);
     renderProgressSummary();
+    checkAchievements();
+  }
+
+  function checkAchievements() {
+    getUnlockedAchievements(state, ACTIVE_NODES).forEach(a => {
+      if (!unlockedAchievementIds.has(a.id)) {
+        unlockedAchievementIds.add(a.id);
+        showToast(`★ Achievement: ${a.name}`, "mastered");
+      }
+    });
   }
 
   function renderProgressSummary() {
@@ -119,15 +140,6 @@ function runMapPage(state) {
       </div>
     `).join("");
   }
-
-  profileNameEl.addEventListener("click", () => {
-    const next = prompt("Rename your profile:", state.profileName);
-    if (next && next.trim()) {
-      state.profileName = next.trim();
-      saveState(state);
-      profileNameEl.textContent = state.profileName;
-    }
-  });
 
   zoomInBtn.addEventListener("click", () => zoomButton(0.85));
   zoomOutBtn.addEventListener("click", () => zoomButton(1.18));

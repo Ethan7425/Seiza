@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seiza — Profile</title>
+  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="manifest" href="../manifest.json">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#0d0a1f">
+</head>
+<body>
+
+  <div class="admin-wrap">
+    <a href="../index.html" class="back-link">&larr; Back to map</a>
+    <h1>Profile</h1>
+
+    <div class="profile-name-section">
+      <label for="profile-name-input">Display name</label>
+      <div class="profile-name-row">
+        <input id="profile-name-input" type="text" autocomplete="off">
+        <button id="profile-name-save">Save</button>
+      </div>
+      <p class="profile-name-hint">This is just how you're shown in the app — it's not what you sign in with.</p>
+    </div>
+
+    <div class="profile-stats">
+      <div class="profile-stat">
+        <span class="profile-stat-value" id="stat-overall">—</span>
+        <span class="profile-stat-label">Overall mastered</span>
+      </div>
+      <div class="profile-stat">
+        <span class="profile-stat-value" id="stat-mastered-count">—</span>
+        <span class="profile-stat-label">Nodes mastered</span>
+      </div>
+      <div class="profile-stat">
+        <span class="profile-stat-value" id="stat-total">—</span>
+        <span class="profile-stat-label">Nodes on map</span>
+      </div>
+    </div>
+
+    <h3 class="profile-branch-heading">By branch</h3>
+    <div id="profile-branch-progress" class="branch-progress branch-progress-standalone"></div>
+
+    <div class="profile-links">
+      <a href="achievements.html" class="btn-link">Achievements</a>
+      <a href="settings.html" class="btn-link">Settings</a>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/progress.js"></script>
+  <script src="../js/db.js"></script>
+  <script src="../js/storage.js"></script>
+  <script src="../js/library.js"></script>
+  <script>
+    let state;
+
+    (async () => {
+      state = await loadState();
+      if (!state) {
+        location.href = "welcome.html";
+        return;
+      }
+
+      ACTIVE_NODES = buildActiveNodes(state);
+
+      document.getElementById("profile-name-input").value = state.profileName;
+
+      const mastered = ACTIVE_NODES.filter(n => effectiveStage(n, state.progress) === "mastered").length;
+      countUp(document.getElementById("stat-overall"), computeOverallProgress(state.progress), "%");
+      countUp(document.getElementById("stat-mastered-count"), mastered);
+      countUp(document.getElementById("stat-total"), ACTIVE_NODES.length);
+
+      renderBranchBars();
+    })();
+
+    // A quick ease-out count from 0 to the real value, instead of the
+    // number just appearing — small bit of life for what's otherwise
+    // a page of static numbers.
+    function countUp(el, target, suffix = "") {
+      const duration = 700;
+      const start = performance.now();
+      function tick(now) {
+        const progress = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = Math.round(target * eased) + suffix;
+        if (progress < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+
+    function renderBranchBars() {
+      document.getElementById("profile-branch-progress").innerHTML = computeBranchProgress(state.progress).map(b => `
+        <div class="branch-bar">
+          <div class="branch-bar-label">
+            <span class="branch-dot" style="background:${b.color}"></span>
+            ${b.label}
+            <span class="branch-bar-pct">${b.percent}%</span>
+          </div>
+          <div class="branch-bar-track">
+            <div class="branch-bar-fill" style="width:${b.percent}%; background:${b.color}; color:${b.color}"></div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    document.getElementById("profile-name-save").addEventListener("click", () => {
+      const input = document.getElementById("profile-name-input");
+      const next = input.value.trim();
+      if (!next) {
+        input.focus();
+        return;
+      }
+      state.profileName = next;
+      saveState(state);
+    });
+  </script>
+  <script src="../js/registerSW.js"></script>
+</body>
+</html>

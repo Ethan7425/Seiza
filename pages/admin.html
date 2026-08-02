@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Seiza — Admin</title>
   <link rel="stylesheet" href="../css/styles.css">
+  <link rel="manifest" href="../manifest.json">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#0d0a1f">
 </head>
 <body>
 
@@ -70,6 +74,7 @@
           return `
             <div class="admin-branch-section">
               <h2 class="admin-branch-heading" style="color:${BRANCHES[id].color}">
+                <span class="branch-dot" style="background:${BRANCHES[id].color}"></span>
                 ${BRANCHES[id].label} <span class="admin-branch-count">${nodes.length}</span>
               </h2>
               ${nodes.length ? nodes.map(nodeCardHtml).join("") : `<p class="admin-empty">Nothing defined yet.</p>`}
@@ -88,5 +93,6 @@
     branchSelect.addEventListener("change", renderAdminList);
     renderAdminList();
   </script>
+  <script src="../js/registerSW.js"></script>
 </body>
 </html>

@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Seiza — Sign In</title>
   <link rel="stylesheet" href="../css/styles.css">
+  <link rel="manifest" href="../manifest.json">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#0d0a1f">
 </head>
 <body>
 
@@ -26,26 +30,23 @@
       }
 
       initWelcome(document.getElementById("welcome-card"), {
-        // Returns true to mean "new profile, go on to the quiz" — false
-        // means an existing profile with that name was found, and this
-        // already signed in as them and is redirecting away.
-        onNameSubmit: async name => {
-          let existing;
-          try {
-            existing = await dbLoadProfile(name);
-          } catch (e) {
-            alert(`Couldn't reach the database: ${e.message}`);
-            return true;
-          }
-          if (!existing) return true;
+        // Just a lookup — no side effects. Returns the profile's data
+        // blob if that name exists, or null if it's free to create.
+        onNameCheck: name => dbLoadProfile(name),
 
+        // Returns true/false for whether the PIN matched. On a match it
+        // signs in and redirects; welcome.js only sees false (to show
+        // "Incorrect PIN" and let them retry).
+        onSignIn: async (name, pin, existingData) => {
+          if (existingData.pin !== pin) return false;
           setProfileKey(name);
           location.href = "../index.html";
-          return false;
+          return true;
         },
 
-        onComplete: async (name, answers) => {
+        onCreateProfile: async (name, pin, answers) => {
           const newState = createStateFromAnswers(name, answers);
+          newState.pin = pin;
           setProfileKey(name);
           try {
             await saveStateNow(name, newState);
@@ -59,5 +60,6 @@
       });
     })();
   </script>
+  <script src="../js/registerSW.js"></script>
 </body>
 </html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seiza — Achievements</title>
+  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="manifest" href="../manifest.json">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#0d0a1f">
+</head>
+<body>
+
+  <div class="admin-wrap">
+    <a href="../index.html" class="back-link">&larr; Back to map</a>
+    <h1>Achievements</h1>
+    <p class="admin-intro" id="achievements-summary"></p>
+
+    <div id="achievements-grid" class="achievements-grid"></div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/progress.js"></script>
+  <script src="../js/db.js"></script>
+  <script src="../js/storage.js"></script>
+  <script src="../js/library.js"></script>
+  <script src="../js/achievements.js"></script>
+  <script>
+    (async () => {
+      const state = await loadState();
+      if (!state) {
+        location.href = "welcome.html";
+        return;
+      }
+
+      ACTIVE_NODES = buildActiveNodes(state);
+      const unlocked = getUnlockedAchievements(state, ACTIVE_NODES);
+      const unlockedIds = new Set(unlocked.map(a => a.id));
+
+      document.getElementById("achievements-summary").textContent =
+        `${unlocked.length} of ${ACHIEVEMENTS.length} unlocked.`;
+
+      document.getElementById("achievements-grid").innerHTML = ACHIEVEMENTS.map(a => {
+        const isUnlocked = unlockedIds.has(a.id);
+        return `
+          <div class="achievement-card ${isUnlocked ? "is-unlocked" : ""}">
+            <div class="achievement-badge">${isUnlocked ? "&#9733;" : "&#9734;"}</div>
+            <h3 class="achievement-name">${a.name}</h3>
+            <p class="achievement-desc">${a.description}</p>
+          </div>
+        `;
+      }).join("");
+    })();
+  </script>
+  <script src="../js/registerSW.js"></script>
+</body>
+</html>

@@ -6,6 +6,7 @@ let onNotesChange = () => {};
 let onProofAdd = () => {};
 let onProofRemove = () => {};
 let onRemoveNode = () => {};
+let onQuantityChange = () => {};
 let isCoreNode = () => true;
 
 function initPanel(el, handlers) {
@@ -15,6 +16,7 @@ function initPanel(el, handlers) {
   onProofAdd = handlers.onProofAdd;
   onProofRemove = handlers.onProofRemove;
   onRemoveNode = handlers.onRemoveNode;
+  onQuantityChange = handlers.onQuantityChange;
   isCoreNode = handlers.isCoreNode;
 }
 
@@ -61,6 +63,12 @@ function renderUnlockedPanel(node, entry, stage, progress) {
     <div class="panel-stage">
       <div>
         <span class="stage-label" data-stage="${stage}">${STAGE_LABELS[stage]}</span>
+        <input
+          type="text"
+          class="stage-quantity"
+          placeholder="Add a quantity, e.g. 200 kanji known"
+          value="${entry.quantity || ""}"
+        >
         <div class="stage-dots">${stageDotsHtml(stage)}</div>
       </div>
       <div class="stage-controls">
@@ -131,7 +139,7 @@ function renderUnlockedPanel(node, entry, stage, progress) {
 
 function openPanel(nodeId, progress) {
   const node = ACTIVE_NODES.find(n => n.id === nodeId);
-  const entry = progress[nodeId] || { stage: "locked", notes: "", proof: [], updatedAt: null };
+  const entry = progress[nodeId] || { stage: "locked", notes: "", proof: [], updatedAt: null, quantity: "" };
   const stage = effectiveStage(node, progress);
   const isLocked = stage === "locked";
 
@@ -151,6 +159,11 @@ function openPanel(nodeId, progress) {
   const notesEl = panelContainer.querySelector(".panel-notes");
   if (notesEl) {
     notesEl.addEventListener("input", () => onNotesChange(node.id, notesEl.value));
+  }
+
+  const quantityEl = panelContainer.querySelector(".stage-quantity");
+  if (quantityEl) {
+    quantityEl.addEventListener("input", () => onQuantityChange(node.id, quantityEl.value));
   }
 
   const proofInput = panelContainer.querySelector(".proof-input");

@@ -28,11 +28,15 @@ function clearProfileKey() {
 // Upgrades older saved/imported data to the current shape:
 // - progress entries used to just be a stage string ("mastered")
 // - addedLibraryIds/nodePositions didn't exist before the library page
+// - quantity (a free-text subtitle like "200 kanji known") didn't
+//   exist before the profile/quantity update
 function migrateState(state) {
   Object.keys(state.progress).forEach(id => {
     const entry = state.progress[id];
     if (typeof entry === "string") {
-      state.progress[id] = { stage: entry, notes: "", proof: [], updatedAt: null };
+      state.progress[id] = { stage: entry, notes: "", proof: [], updatedAt: null, quantity: "" };
+    } else if (typeof entry.quantity !== "string") {
+      entry.quantity = "";
     }
   });
   if (!Array.isArray(state.addedLibraryIds)) {

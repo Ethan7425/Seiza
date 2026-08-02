@@ -40,7 +40,10 @@ function renderLibraryResults() {
 
   libraryResultsEl.innerHTML = groups.length ? groups.map(g => `
     <div class="library-group">
-      <h3 style="color:${BRANCHES[g.branchId].color}">${BRANCHES[g.branchId].label}</h3>
+      <h3 style="color:${BRANCHES[g.branchId].color}">
+        <span class="branch-dot" style="background:${BRANCHES[g.branchId].color}"></span>
+        ${BRANCHES[g.branchId].label}
+      </h3>
       <ul class="library-list">
         ${g.items.map(n => `
           <li class="library-item">

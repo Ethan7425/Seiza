@@ -31,7 +31,7 @@ function createStateFromAnswers(profileName, answers) {
     const isRoot = node.dependsOn.length === 0;
     const level = EXPERIENCE_LEVELS.find(l => l.id === answers[node.branch]);
     const stage = isRoot && level ? level.rootStage : node.stage;
-    progress[node.id] = { stage, notes: "", proof: [], updatedAt: null };
+    progress[node.id] = { stage, notes: "", proof: [], updatedAt: null, quantity: "" };
   });
   return { profileName, progress, addedLibraryIds: [], nodePositions: {} };
 }
