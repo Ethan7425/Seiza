@@ -43,11 +43,21 @@ textarea {
   --shadow-soft: 0 4px 14px rgba(4, 3, 12, 0.3);
 }
 
+html {
+  overflow-x: hidden;
+}
+
 body {
   color: var(--ink);
   font-family: system-ui, -apple-system, sans-serif;
   min-height: 100vh;
   background-color: var(--bg-deep);
+  overflow-x: hidden;
+  /* Vertical page scroll stays native; pinch-zoom and horizontal swipe
+     are the browser's default gestures for zooming the whole site,
+     which fights with the map's own pan/zoom controls. */
+  touch-action: pan-y;
+  overscroll-behavior-x: none;
   background-image:
     radial-gradient(ellipse 900px 500px at 50% -10%, #241c47 0%, transparent 70%),
     radial-gradient(1.5px 1.5px at 40px 60px, rgba(207, 201, 224, 0.55), transparent),
