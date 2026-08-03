@@ -52,6 +52,9 @@ function migrateState(state) {
   if (typeof state.reminderHour !== "number") {
     state.reminderHour = 9;
   }
+  if (typeof state.reminderMinute !== "number") {
+    state.reminderMinute = 0;
+  }
   if (typeof state.reminderTimezoneOffsetMinutes !== "number") {
     state.reminderTimezoneOffsetMinutes = null;
   }
@@ -71,7 +74,7 @@ function createBlankState(profileName) {
   });
   return {
     profileName, progress, addedLibraryIds: [], nodePositions: {},
-    pushSubscription: null, reminderHour: 9, reminderTimezoneOffsetMinutes: null, lastNudgeSentDate: null
+    pushSubscription: null, reminderHour: 9, reminderMinute: 0, reminderTimezoneOffsetMinutes: null, lastNudgeSentDate: null
   };
 }
 

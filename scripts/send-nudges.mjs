@@ -82,10 +82,17 @@ async function saveProfileData(name, data) {
 function localTimeFor(offsetMinutes, nowMs) {
   const localMs = nowMs - offsetMinutes * 60000;
   const d = new Date(localMs);
-  const hour = d.getUTCHours();
+  const totalMinutes = d.getUTCHours() * 60 + d.getUTCMinutes();
   const dateKey = d.toISOString().slice(0, 10);
-  return { hour, dateKey };
+  return { totalMinutes, dateKey };
 }
+
+// The workflow runs every 15 minutes (see daily-nudge.yml) — this is
+// deliberately a bit wider than that interval, as a buffer against a
+// run being delayed or skipped outright (which does happen with
+// GitHub's scheduled workflows), without risking a double-send since
+// lastNudgeSentDate still caps it to once per day either way.
+const CATCH_WINDOW_MINUTES = 20;
 
 function pickNeglectedNode(data, allNodes) {
   let best = null;
@@ -109,16 +116,23 @@ async function main() {
   for (const { name, data } of profiles) {
     if (!data || !data.pushSubscription || typeof data.reminderTimezoneOffsetMinutes !== "number") continue;
 
-    const { hour, dateKey } = localTimeFor(data.reminderTimezoneOffsetMinutes, nowMs);
+    const { totalMinutes, dateKey } = localTimeFor(data.reminderTimezoneOffsetMinutes, nowMs);
     const reminderHour = typeof data.reminderHour === "number" ? data.reminderHour : 9;
-    if (hour !== reminderHour) continue;
+    const reminderMinute = typeof data.reminderMinute === "number" ? data.reminderMinute : 0;
+    const targetMinutes = reminderHour * 60 + reminderMinute;
+
+    // Minutes since the target time today, wrapping across midnight —
+    // "just passed, within the catch window" rather than an exact
+    // match, since this only runs every 15 minutes, not every minute.
+    const sinceTarget = ((totalMinutes - targetMinutes) % 1440 + 1440) % 1440;
+    if (sinceTarget >= CATCH_WINDOW_MINUTES) continue;
     if (data.lastNudgeSentDate === dateKey) continue;
 
     const picked = pickNeglectedNode(data, allNodes);
 
     if (!picked) {
       // Deliberately doesn't mark lastNudgeSentDate — if something
-      // starts being tracked later and this hour gets checked again
+      // starts being tracked later and this window gets checked again
       // (a manual test run, or a rare double-fire), it's not stuck
       // "already handled today" over nothing having actually been sent.
       console.log(`${name} has nothing in progress today — skipping.`);

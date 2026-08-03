@@ -2,11 +2,13 @@ name: Daily reminder push
 
 on:
   schedule:
-    # Runs every hour — each profile's own chosen reminder hour (set
-    # in Settings) is checked against their local time inside the
-    # script, so this needs to run often enough to catch every
-    # timezone's chosen hour, not just once a day for everyone.
-    - cron: "0 * * * *"
+    # Runs 4x/hour so a reminder set to a specific minute (not just an
+    # hour) still lands within send-nudges.mjs's ~20-minute catch
+    # window. Deliberately NOT on the round quarter-hours (:00/:15/:30/
+    # :45) — GitHub's own docs warn those exact slots are the most
+    # congested for scheduled workflows and can be delayed or dropped
+    # outright, which is exactly what happened when this was ":00".
+    - cron: "7,22,37,52 * * * *"
   workflow_dispatch: {} # lets you trigger a run manually from the Actions tab, for testing
 
 jobs:
