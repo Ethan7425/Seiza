@@ -1068,6 +1068,49 @@ label[for="suggest-text"] {
   letter-spacing: 0.04em;
 }
 
+.changelog-list {
+  max-height: 180px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  background: var(--bg-deep);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  padding: 0.7rem 0.9rem;
+}
+
+.changelog-entry + .changelog-entry {
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border-soft);
+}
+
+.changelog-entry-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.changelog-version {
+  font-size: 0.8rem;
+  color: var(--accent-warm);
+  font-weight: bold;
+}
+
+.changelog-date {
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+}
+
+.changelog-notes {
+  list-style: disc;
+  padding-left: 1.1rem;
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+  line-height: 1.6;
+}
+
 .settings-section h3 {
   font-size: 0.72rem;
   letter-spacing: 0.08em;

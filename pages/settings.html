@@ -66,6 +66,11 @@
         <a href="suggest.html" class="btn-link">Suggest something</a>
       </div>
 
+      <div class="settings-section">
+        <h3>What's new</h3>
+        <div class="changelog-list" id="changelog-list"></div>
+      </div>
+
       <p class="app-version" id="app-version"></p>
     </div>
   </div>
@@ -181,7 +186,19 @@
       });
     });
 
-    document.getElementById("app-version").textContent = APP_VERSION;
+    document.getElementById("app-version").textContent = `v${APP_VERSION}`;
+
+    document.getElementById("changelog-list").innerHTML = CHANGELOG.map(entry => `
+      <div class="changelog-entry">
+        <div class="changelog-entry-head">
+          <span class="changelog-version">v${entry.version}</span>
+          <span class="changelog-date">${entry.date}</span>
+        </div>
+        <ul class="changelog-notes">
+          ${entry.notes.map(note => `<li>${note}</li>`).join("")}
+        </ul>
+      </div>
+    `).join("");
 
     document.getElementById("switch-profile-btn").addEventListener("click", () => {
       signOut();
