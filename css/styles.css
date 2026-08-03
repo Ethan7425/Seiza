@@ -1000,6 +1000,50 @@ main {
   padding-top: 0;
 }
 
+/* ---- Suggestion form ---- */
+.suggest-intro {
+  font-size: 0.85rem;
+  color: var(--ink-faint);
+  line-height: 1.5;
+  margin-bottom: 1.4rem;
+}
+
+.suggest-type-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.2rem;
+}
+
+.suggest-type-btn {
+  flex: 1;
+}
+
+.suggest-type-btn.active {
+  border-color: var(--accent-warm);
+  color: var(--accent-warm);
+  background: rgba(216, 160, 92, 0.1);
+}
+
+label[for="suggest-text"] {
+  display: block;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 0.5rem;
+}
+
+.suggest-error {
+  font-size: 0.78rem;
+  color: var(--danger);
+  margin-top: 0.6rem;
+}
+
+#suggest-submit {
+  margin-top: 1.2rem;
+  width: 100%;
+}
+
 .app-version {
   margin-top: 1.4rem;
   text-align: center;

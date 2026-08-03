@@ -1,5 +1,11 @@
 // ---- Entry point for the map page (index.html) ----
 
+// iOS Safari has never implemented the Vibration API, even installed
+// as a PWA — feature-detected so it's just silently a no-op there.
+function vibrate(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
+
 (async () => {
   const state = await loadState();
   if (!state) {
@@ -45,12 +51,20 @@ function runMapPage(state) {
     const unlockedBefore = new Set(
       ACTIVE_NODES.filter(n => effectiveStage(n, state.progress) !== "locked").map(n => n.id)
     );
+    const oldStage = state.progress[nodeId].stage;
 
     state.progress[nodeId].stage = newStage;
     state.progress[nodeId].updatedAt = new Date().toISOString();
     saveState(state);
     refreshAll();
     openPanel(nodeId, state.progress);
+
+    // A short buzz on every step up (not just mastery) — the small
+    // "yes, that counted" feedback matters more day-to-day than the
+    // one-time celebration. Regress doesn't buzz, only forward moves.
+    if (PROGRESS_STAGES.indexOf(newStage) > PROGRESS_STAGES.indexOf(oldStage)) {
+      vibrate(newStage === "mastered" ? [20, 40, 20] : 15);
+    }
 
     if (newStage === "mastered") {
       const node = ACTIVE_NODES.find(n => n.id === nodeId);

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Seiza — Suggest</title>
+  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="manifest" href="../manifest.json">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#0d0a1f">
+</head>
+<body>
+
+  <div class="centered-page">
+    <div class="settings-card">
+      <a href="settings.html" class="back-link">&larr; Back to settings</a>
+      <h2>Suggest something</h2>
+      <p class="suggest-intro">Got an idea for a node, or a whole new branch? Send it over — it's tagged with your name so we know who to credit.</p>
+
+      <div class="suggest-type-row" id="suggest-type-row">
+        <button type="button" class="suggest-type-btn" data-type="Node">A node</button>
+        <button type="button" class="suggest-type-btn" data-type="Branch">A branch</button>
+        <button type="button" class="suggest-type-btn" data-type="Other">Other</button>
+      </div>
+
+      <label for="suggest-text">What should it be?</label>
+      <textarea id="suggest-text" class="panel-notes" rows="4" placeholder="e.g. &quot;A branch for woodworking&quot; or &quot;A node for reading train timetables&quot;"></textarea>
+      <p class="suggest-error" hidden></p>
+
+      <button type="button" id="suggest-submit">Send suggestion</button>
+    </div>
+  </div>
+
+  <script src="../js/db.js"></script>
+  <script src="../js/storage.js"></script>
+  <script src="../js/discord.js"></script>
+  <script>
+    let state;
+    let selectedType = null;
+
+    (async () => {
+      state = await loadState();
+      if (!state) {
+        location.href = "welcome.html";
+        return;
+      }
+    })();
+
+    const typeButtons = document.querySelectorAll(".suggest-type-btn");
+    typeButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        selectedType = btn.dataset.type;
+        typeButtons.forEach(b => b.classList.toggle("active", b === btn));
+      });
+    });
+
+    const textEl = document.getElementById("suggest-text");
+    const errorEl = document.querySelector(".suggest-error");
+    const submitBtn = document.getElementById("suggest-submit");
+
+    submitBtn.addEventListener("click", async () => {
+      const text = textEl.value.trim();
+      if (!selectedType) {
+        errorEl.textContent = "Pick what kind of suggestion this is.";
+        errorEl.hidden = false;
+        return;
+      }
+      if (!text) {
+        errorEl.textContent = "Write a quick description first.";
+        errorEl.hidden = false;
+        return;
+      }
+      errorEl.hidden = true;
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Sending...";
+      try {
+        await sendSuggestion(state.profileName, selectedType, text);
+        submitBtn.textContent = "Sent — thank you!";
+        textEl.value = "";
+        selectedType = null;
+        typeButtons.forEach(b => b.classList.remove("active"));
+        setTimeout(() => {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Send suggestion";
+        }, 2000);
+      } catch (e) {
+        errorEl.textContent = `Couldn't send that: ${e.message}`;
+        errorEl.hidden = false;
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Send suggestion";
+      }
+    });
+  </script>
+  <script src="../js/registerSW.js"></script>
+</body>
+</html>
