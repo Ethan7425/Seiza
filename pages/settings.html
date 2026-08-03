@@ -44,9 +44,12 @@
         <p>Browse every node defined in code, by branch — on the map already or still in the library.</p>
         <a href="admin.html" class="btn-link">Node overview</a>
       </div>
+
+      <p class="app-version" id="app-version"></p>
     </div>
   </div>
 
+  <script src="../js/version.js"></script>
   <script src="../js/db.js"></script>
   <script src="../js/storage.js"></script>
   <script>
@@ -60,6 +63,8 @@
       }
       document.getElementById("current-profile-name").textContent = state.profileName;
     })();
+
+    document.getElementById("app-version").textContent = APP_VERSION;
 
     document.getElementById("switch-profile-btn").addEventListener("click", () => {
       signOut();

@@ -233,6 +233,12 @@ main {
   position: relative;
   flex: 1;
   min-width: 0;
+  /* The whole map area drives its own pan/zoom via JS — none of it
+     should hand touch gestures off to native page scroll/zoom, not
+     just the <svg> itself (a touch starting a pixel off its edge,
+     e.g. over the search bar or zoom controls, was falling through
+     to the page before). */
+  touch-action: none;
 }
 
 #star-map {
@@ -992,6 +998,14 @@ main {
 .settings-section:first-of-type {
   border-top: none;
   padding-top: 0;
+}
+
+.app-version {
+  margin-top: 1.4rem;
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--ink-dim);
+  letter-spacing: 0.04em;
 }
 
 .settings-section h3 {

@@ -314,6 +314,10 @@ function applySearchFilter(term) {
 function setupZoomPan() {
   let dragging = false;
   let last = { x: 0, y: 0 };
+  let rect = null; // cached once per drag — see note below
+  let panRAF = null;
+  let pendingDx = 0;
+  let pendingDy = 0;
 
   svg.addEventListener("wheel", e => {
     e.preventDefault();
@@ -324,20 +328,43 @@ function setupZoomPan() {
     if (e.target.closest(".node")) return;
     dragging = true;
     last = { x: e.clientX, y: e.clientY };
+    // Reading layout size once here, instead of on every pointermove,
+    // avoids forcing a synchronous reflow on each of the dozens of
+    // move events a single drag fires — that per-event reflow was
+    // the actual source of the panning lag.
+    rect = svg.getBoundingClientRect();
     svg.setPointerCapture(e.pointerId);
   });
 
   svg.addEventListener("pointermove", e => {
     if (!dragging) return;
-    const scale = viewBox.w / svg.clientWidth;
-    viewBox.x -= (e.clientX - last.x) * scale;
-    viewBox.y -= (e.clientY - last.y) * scale;
-    applyViewBox();
+    pendingDx += (e.clientX - last.x) * (viewBox.w / rect.width);
+    pendingDy += (e.clientY - last.y) * (viewBox.h / rect.height);
     last = { x: e.clientX, y: e.clientY };
+
+    // Coalesce every move since the last paint into one viewBox
+    // update per frame, instead of writing to the DOM on every
+    // single pointermove (which can fire faster than the screen
+    // can actually repaint).
+    if (panRAF === null) {
+      panRAF = requestAnimationFrame(() => {
+        viewBox.x -= pendingDx;
+        viewBox.y -= pendingDy;
+        pendingDx = 0;
+        pendingDy = 0;
+        applyViewBox();
+        panRAF = null;
+      });
+    }
   });
 
-  svg.addEventListener("pointerup", () => { dragging = false; });
-  svg.addEventListener("pointerleave", () => { dragging = false; });
+  const endDrag = () => {
+    dragging = false;
+    rect = null;
+  };
+
+  svg.addEventListener("pointerup", endDrag);
+  svg.addEventListener("pointerleave", endDrag);
   svg.addEventListener("dblclick", resetView);
 }
 

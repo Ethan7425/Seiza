@@ -5,12 +5,15 @@
 // requests are explicitly never touched here; that's live data, not
 // something a static-asset cache should ever get in the way of.
 
-const CACHE_NAME = "seiza-v1";
+// Keep this in sync with APP_VERSION in js/version.js — bumping it
+// here is what actually forces stale caches to clear on old devices.
+const CACHE_NAME = "seiza-v2";
 
 const APP_SHELL = [
   "./",
   "./index.html",
   "./css/styles.css",
+  "./js/version.js",
   "./js/data.js",
   "./js/progress.js",
   "./js/db.js",
