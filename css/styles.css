@@ -1648,9 +1648,14 @@ label[for="suggest-text"] {
      one region that scrolls internally instead (main's graph-wrap on
      the map page, .admin-wrap/.centered-page everywhere else), so the
      header and tab bar stay put and nothing hands a drag off to the
-     browser's own page-scroll. */
+     browser's own page-scroll.
+     position:fixed (not just overflow:hidden) is the reliable form of
+     this on iOS Safari specifically — overflow:hidden alone can still
+     let the page bounce/scroll a few px there (e.g. when tapping near
+     the bottom tab bar), which fixed positioning genuinely can't. */
   body {
-    height: 100dvh;
+    position: fixed;
+    inset: 0;
     overflow: hidden;
     overscroll-behavior: none;
     display: flex;
