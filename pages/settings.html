@@ -24,6 +24,16 @@
       </div>
 
       <div class="settings-section">
+        <h3>Daily reminders</h3>
+        <p>A quiet daily nudge about whatever you've got in progress — no streaks, and it stays silent on days nothing's mid-way. On iPhone, this only works if Seiza is added to your Home Screen and opened from that icon, not from Safari directly.</p>
+        <div class="settings-row">
+          <label for="reminder-hour-select" class="settings-inline-label">Around</label>
+          <select id="reminder-hour-select"></select>
+        </div>
+        <button id="reminder-toggle-btn">Enable reminders</button>
+      </div>
+
+      <div class="settings-section">
         <h3>Backup</h3>
         <p>Download your progress as a JSON file, or restore from one.</p>
         <div class="settings-row">
@@ -58,8 +68,16 @@
   <script src="../js/version.js"></script>
   <script src="../js/db.js"></script>
   <script src="../js/storage.js"></script>
+  <script src="../js/push.js"></script>
   <script>
     let state;
+    const hourSelect = document.getElementById("reminder-hour-select");
+    const reminderBtn = document.getElementById("reminder-toggle-btn");
+
+    hourSelect.innerHTML = Array.from({ length: 24 }, (_, h) => {
+      const label = h === 0 ? "12:00 AM" : h < 12 ? `${h}:00 AM` : h === 12 ? "12:00 PM" : `${h - 12}:00 PM`;
+      return `<option value="${h}">${label}</option>`;
+    }).join("");
 
     (async () => {
       state = await loadState();
@@ -68,7 +86,41 @@
         return;
       }
       document.getElementById("current-profile-name").textContent = state.profileName;
+      hourSelect.value = state.reminderHour;
+      updateReminderButton();
     })();
+
+    function updateReminderButton() {
+      reminderBtn.textContent = state.pushSubscription ? "Disable reminders" : "Enable reminders";
+    }
+
+    reminderBtn.addEventListener("click", async () => {
+      reminderBtn.disabled = true;
+      try {
+        if (state.pushSubscription) {
+          await unsubscribeFromPush();
+          state.pushSubscription = null;
+        } else {
+          const subscription = await subscribeToPush();
+          state.pushSubscription = subscription;
+          state.reminderHour = parseInt(hourSelect.value, 10);
+          state.reminderTimezoneOffsetMinutes = new Date().getTimezoneOffset();
+        }
+        saveState(state);
+        updateReminderButton();
+      } catch (e) {
+        alert(e.message);
+      }
+      reminderBtn.disabled = false;
+    });
+
+    hourSelect.addEventListener("change", () => {
+      state.reminderHour = parseInt(hourSelect.value, 10);
+      if (state.pushSubscription) {
+        state.reminderTimezoneOffsetMinutes = new Date().getTimezoneOffset();
+      }
+      saveState(state);
+    });
 
     document.getElementById("app-version").textContent = APP_VERSION;
 

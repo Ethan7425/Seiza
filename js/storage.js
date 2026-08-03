@@ -30,6 +30,7 @@ function clearProfileKey() {
 // - addedLibraryIds/nodePositions didn't exist before the library page
 // - quantity (a free-text subtitle like "200 kanji known") didn't
 //   exist before the profile/quantity update
+// - pushSubscription/reminderHour/etc didn't exist before daily nudges
 function migrateState(state) {
   Object.keys(state.progress).forEach(id => {
     const entry = state.progress[id];
@@ -45,6 +46,18 @@ function migrateState(state) {
   if (!state.nodePositions || typeof state.nodePositions !== "object") {
     state.nodePositions = {};
   }
+  if (typeof state.pushSubscription === "undefined") {
+    state.pushSubscription = null;
+  }
+  if (typeof state.reminderHour !== "number") {
+    state.reminderHour = 9;
+  }
+  if (typeof state.reminderTimezoneOffsetMinutes !== "number") {
+    state.reminderTimezoneOffsetMinutes = null;
+  }
+  if (typeof state.lastNudgeSentDate === "undefined") {
+    state.lastNudgeSentDate = null;
+  }
   return state;
 }
 
@@ -56,7 +69,10 @@ function createBlankState(profileName) {
   NODES.forEach(node => {
     progress[node.id] = { stage: "locked", notes: "", proof: [], updatedAt: null, quantity: "" };
   });
-  return { profileName, progress, addedLibraryIds: [], nodePositions: {} };
+  return {
+    profileName, progress, addedLibraryIds: [], nodePositions: {},
+    pushSubscription: null, reminderHour: 9, reminderTimezoneOffsetMinutes: null, lastNudgeSentDate: null
+  };
 }
 
 function readLocalCache() {

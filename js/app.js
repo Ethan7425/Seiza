@@ -158,5 +158,17 @@ function runMapPage(state) {
   zoomInBtn.addEventListener("click", () => zoomButton(0.85));
   zoomOutBtn.addEventListener("click", () => zoomButton(1.18));
 
-  mapSearchInput.addEventListener("input", () => applySearchFilter(mapSearchInput.value));
+  const searchEmptyEl = document.getElementById("map-search-empty");
+  const searchEmptyTermEl = document.getElementById("map-search-empty-term");
+
+  mapSearchInput.addEventListener("input", () => {
+    const term = mapSearchInput.value.trim();
+    const found = applySearchFilter(term);
+    if (term && !found) {
+      searchEmptyTermEl.textContent = term;
+      searchEmptyEl.hidden = false;
+    } else {
+      searchEmptyEl.hidden = true;
+    }
+  });
 }

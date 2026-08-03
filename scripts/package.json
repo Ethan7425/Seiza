@@ -1,0 +1,9 @@
+{
+  "name": "seiza-nudges",
+  "private": true,
+  "type": "module",
+  "description": "Scheduled script run by GitHub Actions to send the daily reminder push notifications. Not part of the served site.",
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
+}

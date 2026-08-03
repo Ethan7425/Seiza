@@ -1,0 +1,30 @@
+name: Daily reminder push
+
+on:
+  schedule:
+    # Runs every hour — each profile's own chosen reminder hour (set
+    # in Settings) is checked against their local time inside the
+    # script, so this needs to run often enough to catch every
+    # timezone's chosen hour, not just once a day for everyone.
+    - cron: "0 * * * *"
+  workflow_dispatch: {} # lets you trigger a run manually from the Actions tab, for testing
+
+jobs:
+  send-nudges:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: scripts
+        run: npm install
+
+      - name: Send due reminders
+        working-directory: scripts
+        env:
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+        run: node send-nudges.mjs

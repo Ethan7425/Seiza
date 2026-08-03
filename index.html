@@ -33,6 +33,10 @@
     <div class="graph-wrap">
       <div class="map-search">
         <input type="text" id="map-search-input" placeholder="Search the sky...">
+        <p class="map-search-empty" id="map-search-empty" hidden>
+          No node called "<span id="map-search-empty-term"></span>" yet.
+          <a href="pages/suggest.html">Suggest it?</a>
+        </p>
       </div>
       <svg id="star-map" viewBox="0 0 1200 1200" preserveAspectRatio="xMidYMid meet"></svg>
       <div class="zoom-controls">

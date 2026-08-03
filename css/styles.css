@@ -293,6 +293,22 @@ main {
   border-color: var(--accent-warm);
 }
 
+.map-search-empty {
+  margin-top: 0.5rem;
+  max-width: 13rem;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--ink-faint);
+  background: var(--bg-deep);
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  padding: 0.5rem 0.6rem;
+}
+
+.map-search-empty a {
+  color: var(--accent-warm);
+}
+
 /* ---- Nebulas (branch theme regions) ---- */
 .nebula {
   pointer-events: none;
@@ -1070,7 +1086,29 @@ label[for="suggest-text"] {
 .settings-row {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.6rem;
+  margin-bottom: 0.9rem;
+}
+
+.settings-inline-label {
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+}
+
+.settings-row select {
+  font-family: inherit;
+  font-size: 0.88rem;
+  padding: 0.45rem 0.7rem;
+  background: var(--bg-deep);
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  color: var(--ink);
+}
+
+.settings-row select:focus {
+  outline: none;
+  border-color: var(--accent-warm);
 }
 
 .btn-danger {
@@ -1584,7 +1622,24 @@ label[for="suggest-text"] {
 
 /* ---- Responsive ---- */
 @media (max-width: 760px) {
+  html, body {
+    height: 100%;
+  }
+
+  /* The page itself never scrolls on mobile — each page has exactly
+     one region that scrolls internally instead (main's graph-wrap on
+     the map page, .admin-wrap/.centered-page everywhere else), so the
+     header and tab bar stay put and nothing hands a drag off to the
+     browser's own page-scroll. */
+  body {
+    height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
   header {
+    flex-shrink: 0;
     padding: 1rem 1.2rem;
     position: sticky;
     top: 0;
@@ -1600,17 +1655,28 @@ label[for="suggest-text"] {
     display: none;
   }
 
-  .branch-progress {
-    padding: 1rem 1.2rem;
+  /* The branch breakdown is already one tap away on Profile — here it
+     was mostly just eating space above the map, which should be the
+     main thing on screen on a phone. */
+  #branch-progress {
+    display: none;
   }
 
   main {
+    flex: 1;
+    min-height: 0;
     flex-direction: column;
-    padding: 1rem 1.2rem 1.5rem;
+    padding: 0.6rem 0.8rem;
+    overflow: hidden;
+  }
+
+  .graph-wrap {
+    min-height: 0;
+    height: 100%;
   }
 
   #star-map {
-    height: 65vh;
+    height: 100%;
   }
 
   .side-panel {
@@ -1699,13 +1765,22 @@ label[for="suggest-text"] {
     min-height: 0;
   }
 
-  /* Secondary pages (Profile, Achievements, Admin) use .admin-wrap's
-     desktop-sized padding by default — too roomy on a phone. */
+  /* Secondary pages: this wrapper is the one scrollable region on the
+     page (see the body rule above) — also tightens the desktop-sized
+     padding, which was too roomy on a phone. */
   .admin-wrap {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     padding: 1.6rem 1.2rem 2rem;
   }
 
   .centered-page {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     padding: 1.6rem 1.2rem;
   }
 

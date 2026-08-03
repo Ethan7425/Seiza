@@ -295,8 +295,11 @@ function celebrateNode(nodeId) {
 
 // Dims everything except nodes whose name matches the search term,
 // and gives matches a small glow so they're easy to spot at a glance.
+// Returns whether anything matched, so the caller can show a "nothing
+// found" hint for an empty result.
 function applySearchFilter(term) {
   const q = term.trim().toLowerCase();
+  let anyMatch = false;
   ACTIVE_NODES.forEach(node => {
     const group = nodeGroups[node.id];
     if (!q) {
@@ -304,11 +307,13 @@ function applySearchFilter(term) {
     } else if (node.name.toLowerCase().includes(q)) {
       group.classList.add("search-match");
       group.classList.remove("dimmed");
+      anyMatch = true;
     } else {
       group.classList.add("dimmed");
       group.classList.remove("search-match");
     }
   });
+  return anyMatch;
 }
 
 function setupZoomPan() {
