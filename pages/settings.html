@@ -30,7 +30,11 @@
           <label for="reminder-hour-select" class="settings-inline-label">Around</label>
           <select id="reminder-hour-select"></select>
         </div>
-        <button id="reminder-toggle-btn">Enable reminders</button>
+        <div class="settings-row">
+          <button id="reminder-toggle-btn">Enable reminders</button>
+          <button id="test-notification-btn">Send test notification</button>
+        </div>
+        <p class="settings-hint">The test button only checks that notifications work on this device — it shows one instantly from here, without going through the actual daily-reminder pipeline (GitHub Action → push service). Use "Enable reminders" first.</p>
       </div>
 
       <div class="settings-section">
@@ -120,6 +124,24 @@
         state.reminderTimezoneOffsetMinutes = new Date().getTimezoneOffset();
       }
       saveState(state);
+    });
+
+    document.getElementById("test-notification-btn").addEventListener("click", async () => {
+      if (!("serviceWorker" in navigator) || !("Notification" in window)) {
+        alert("Notifications aren't supported here — on iPhone, make sure Seiza is added to your Home Screen and opened from that icon.");
+        return;
+      }
+      if (Notification.permission !== "granted") {
+        alert('Notifications aren\'t allowed yet — tap "Enable reminders" first.');
+        return;
+      }
+      const registration = await navigator.serviceWorker.ready;
+      await registration.showNotification("Seiza", {
+        body: "Test notification — if you see this, notifications work on this device.",
+        icon: "../icons/icon-192.png",
+        badge: "../icons/icon-192.png",
+        data: { url: "./index.html" }
+      });
     });
 
     document.getElementById("app-version").textContent = APP_VERSION;

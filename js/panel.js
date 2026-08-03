@@ -1,6 +1,7 @@
 // ---- Side panel: node detail view + stage stepper + notes/evidence ----
 
 let panelContainer;
+let panelBackdropEl;
 let onStageChange = () => {};
 let onNotesChange = () => {};
 let onProofAdd = () => {};
@@ -11,6 +12,7 @@ let isCoreNode = () => true;
 
 function initPanel(el, handlers) {
   panelContainer = el;
+  panelBackdropEl = document.getElementById("panel-backdrop");
   onStageChange = handlers.onStageChange;
   onNotesChange = handlers.onNotesChange;
   onProofAdd = handlers.onProofAdd;
@@ -18,6 +20,10 @@ function initPanel(el, handlers) {
   onRemoveNode = handlers.onRemoveNode;
   onQuantityChange = handlers.onQuantityChange;
   isCoreNode = handlers.isCoreNode;
+
+  if (panelBackdropEl) {
+    panelBackdropEl.addEventListener("click", closePanel);
+  }
 }
 
 function formatDate(iso) {
@@ -196,9 +202,11 @@ function openPanel(nodeId, progress) {
 
   panelContainer.classList.add("open");
   panelContainer.dataset.openNode = nodeId;
+  if (panelBackdropEl) panelBackdropEl.classList.add("visible");
 }
 
 function closePanel() {
   panelContainer.classList.remove("open");
   delete panelContainer.dataset.openNode;
+  if (panelBackdropEl) panelBackdropEl.classList.remove("visible");
 }

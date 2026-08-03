@@ -1096,6 +1096,13 @@ label[for="suggest-text"] {
   color: var(--ink-faint);
 }
 
+.settings-hint {
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+  line-height: 1.5;
+  margin-top: 0.3rem;
+}
+
 .settings-row select {
   font-family: inherit;
   font-size: 0.88rem;
@@ -1141,6 +1148,7 @@ label[for="suggest-text"] {
 #library-content {
   display: flex;
   flex-direction: column;
+  flex: 1;
   min-height: 0;
 }
 
@@ -1176,8 +1184,11 @@ label[for="suggest-text"] {
 }
 
 .library-groups {
+  flex: 1;
   overflow-y: auto;
   min-height: 0;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .library-group {
@@ -1620,6 +1631,13 @@ label[for="suggest-text"] {
   display: none;
 }
 
+/* Only meaningful on mobile, where the side panel becomes a floating
+   bottom sheet over the map — on desktop it's docked in the layout
+   instead, so no dimming/blocking backdrop is needed there. */
+.panel-backdrop {
+  display: none;
+}
+
 /* ---- Responsive ---- */
 @media (max-width: 760px) {
   html, body {
@@ -1634,6 +1652,7 @@ label[for="suggest-text"] {
   body {
     height: 100dvh;
     overflow: hidden;
+    overscroll-behavior: none;
     display: flex;
     flex-direction: column;
   }
@@ -1655,28 +1674,79 @@ label[for="suggest-text"] {
     display: none;
   }
 
-  /* The branch breakdown is already one tap away on Profile — here it
-     was mostly just eating space above the map, which should be the
-     main thing on screen on a phone. */
+  /* The full breakdown is still one tap away on Profile — here it's
+     just a thin, horizontally-scrollable strip so it stays glanceable
+     without competing with the map for space. */
   #branch-progress {
+    flex-shrink: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 0.8rem;
+    padding: 0.5rem 0.8rem;
+  }
+
+  #branch-progress .branch-bar {
+    flex: 0 0 92px;
+    min-width: 92px;
+  }
+
+  #branch-progress .branch-bar-label {
+    font-size: 0.64rem;
+  }
+
+  #branch-progress .branch-bar-pct {
     display: none;
+  }
+
+  #branch-progress .branch-bar-track {
+    height: 3px;
   }
 
   main {
     flex: 1;
     min-height: 0;
+    /* align-items:flex-start is inherited from the desktop rule above
+       — in a row layout that's fine, but in this column layout it
+       means .graph-wrap sizes to its content width instead of
+       stretching full-width, leaving a blank strip on the right. */
+    align-items: stretch;
     flex-direction: column;
     padding: 0.6rem 0.8rem;
     overflow: hidden;
   }
 
+  /* display:flex here (not just flex:1) so #star-map can fill it via
+     its own flex:1 below — a definite flex-computed height is more
+     reliable across browsers than chaining percentage heights. */
   .graph-wrap {
+    display: flex;
+    flex-direction: column;
     min-height: 0;
-    height: 100%;
   }
 
   #star-map {
-    height: 100%;
+    flex: 1;
+    min-height: 0;
+    height: auto;
+  }
+
+  .panel-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 140;
+    background: rgba(6, 4, 16, 0.6);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+
+  .panel-backdrop.visible {
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .side-panel {
@@ -1688,6 +1758,7 @@ label[for="suggest-text"] {
     max-height: 55vh;
     border-radius: 12px 12px 0 0;
     transform: translateY(100%);
+    z-index: 150;
   }
 
   .side-panel.open {
@@ -1765,23 +1836,58 @@ label[for="suggest-text"] {
     min-height: 0;
   }
 
-  /* Secondary pages: this wrapper is the one scrollable region on the
-     page (see the body rule above) — also tightens the desktop-sized
-     padding, which was too roomy on a phone. */
+  /* Secondary pages: this is now a real card-like component filling
+     most of the screen (not just a bare content column), and it's the
+     one scrollable region on the page — see the body rule above for
+     why the page itself never scrolls. */
   .admin-wrap {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding: 1.6rem 1.2rem 2rem;
+    /* Without this, scrolling this element to its end and continuing
+       to swipe "chains" the rest of the gesture to the page behind
+       it — which has nowhere to go (it's pinned to 100dvh) and just
+       gets stuck half-scrolled. This stops the gesture right here. */
+    overscroll-behavior: contain;
+    margin: 0.6rem 0.8rem;
+    padding: 1.4rem 1.2rem 1.8rem;
+    background: var(--panel-bg);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    box-shadow: var(--shadow-card);
   }
 
+  /* The wrapper itself no longer scrolls or owns a visible boundary —
+     that's now the card's job (.settings-card/.library-card below).
+     Without this, the wrapper's own overflow competed with the card's
+     internal scroll region, causing the same "stuck" double-scroll
+     bug as before. */
   .centered-page {
     flex: 1;
     min-height: 0;
+    overflow: hidden;
+    padding: 0.6rem 0.8rem;
+  }
+
+  .settings-card {
+    align-self: stretch;
+    width: 100%;
+    max-height: none;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding: 1.6rem 1.2rem;
+    overscroll-behavior: contain;
+  }
+
+  /* .library-card keeps its desktop overflow:hidden — its own
+     .library-groups region (below the pinned search bar) is the
+     actual scroller, which is nicer than scrolling the search bar
+     away too, so it isn't flattened into a plain full-card scroll
+     like .settings-card. */
+  .library-card {
+    align-self: stretch;
+    width: 100%;
+    max-height: none;
   }
 
   .profile-stats {

@@ -116,29 +116,36 @@ async function main() {
 
     const picked = pickNeglectedNode(data, allNodes);
 
-    if (picked) {
-      const message = `${picked.node.name} is still at ${STAGE_LABELS[picked.stage]} — let's grow it stronger.`;
-      try {
-        await webpush.sendNotification(data.pushSubscription, JSON.stringify({
-          title: "Seiza",
-          body: message,
-          url: "./index.html"
-        }));
-        console.log(`Sent to ${name}: ${message}`);
-      } catch (e) {
-        if (e.statusCode === 404 || e.statusCode === 410) {
-          console.log(`Subscription for ${name} is gone — clearing it.`);
-          data.pushSubscription = null;
-        } else {
-          console.error(`Failed to send to ${name}:`, e.message);
-        }
-      }
-    } else {
+    if (!picked) {
+      // Deliberately doesn't mark lastNudgeSentDate — if something
+      // starts being tracked later and this hour gets checked again
+      // (a manual test run, or a rare double-fire), it's not stuck
+      // "already handled today" over nothing having actually been sent.
       console.log(`${name} has nothing in progress today — skipping.`);
+      continue;
     }
 
-    data.lastNudgeSentDate = dateKey;
-    await saveProfileData(name, data);
+    const message = `${picked.node.name} is still at ${STAGE_LABELS[picked.stage]} — let's grow it stronger.`;
+    try {
+      await webpush.sendNotification(data.pushSubscription, JSON.stringify({
+        title: "Seiza",
+        body: message,
+        url: "./index.html"
+      }));
+      console.log(`Sent to ${name}: ${message}`);
+      data.lastNudgeSentDate = dateKey;
+      await saveProfileData(name, data);
+    } catch (e) {
+      if (e.statusCode === 404 || e.statusCode === 410) {
+        console.log(`Subscription for ${name} is gone — clearing it.`);
+        data.pushSubscription = null;
+        await saveProfileData(name, data);
+      } else {
+        // Transient failure — leave lastNudgeSentDate alone so the
+        // next hourly run (or a retry) can try again.
+        console.error(`Failed to send to ${name}:`, e.message);
+      }
+    }
   }
 }
 

@@ -35,6 +35,16 @@ function initGraph(svgEl, handlers) {
   svg = svgEl;
   onNodeClick = handlers.onNodeClick;
 
+  // The viewBox is a square, but on a phone the map now fills a tall
+  // narrow rectangle — "meet" (the desktop default) would letterbox
+  // that with empty bars on either side, so it switches to "slice"
+  // (crop-to-fill, like background-size:cover) below the same 760px
+  // breakpoint everything else uses. Edges just get panned to rather
+  // than shown all at once, which is fine for an explorable map.
+  if (window.innerWidth <= 760) {
+    svg.setAttribute("preserveAspectRatio", "xMidYMid slice");
+  }
+
   nebulaLayer = createSvgEl("g", { class: "nebula-layer" });
   starLayer = createSvgEl("g", { class: "star-layer" });
   lineLayer = createSvgEl("g", { class: "line-layer" });
