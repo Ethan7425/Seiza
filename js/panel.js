@@ -63,12 +63,14 @@ function renderUnlockedPanel(node, entry, stage, progress) {
     <div class="panel-stage">
       <div>
         <span class="stage-label" data-stage="${stage}">${STAGE_LABELS[stage]}</span>
-        <input
-          type="text"
-          class="stage-quantity"
-          placeholder="Add a quantity, e.g. 200 kanji known"
-          value="${entry.quantity || ""}"
-        >
+        ${node.quantityLabel ? `
+          <input
+            type="text"
+            class="stage-quantity"
+            placeholder="e.g. 50 ${node.quantityLabel}"
+            value="${entry.quantity || ""}"
+          >
+        ` : ""}
         <div class="stage-dots">${stageDotsHtml(stage)}</div>
       </div>
       <div class="stage-controls">

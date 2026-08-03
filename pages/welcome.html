@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Seiza — Sign In</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Seiza — Welcome</title>
   <link rel="stylesheet" href="../css/styles.css">
   <link rel="manifest" href="../manifest.json">
   <link rel="icon" type="image/svg+xml" href="../favicon.svg">
@@ -19,7 +19,6 @@
   <script src="../js/data.js"></script>
   <script src="../js/db.js"></script>
   <script src="../js/storage.js"></script>
-  <script src="../js/quiz.js"></script>
   <script src="../js/welcome.js"></script>
   <script>
     (async () => {
@@ -40,12 +39,12 @@
         onSignIn: async (name, pin, existingData) => {
           if (existingData.pin !== pin) return false;
           setProfileKey(name);
-          location.href = "../index.html";
+          showSuccessAndRedirect(`Welcome back, ${name} &#9734;`);
           return true;
         },
 
-        onCreateProfile: async (name, pin, answers) => {
-          const newState = createStateFromAnswers(name, answers);
+        onCreateProfile: async (name, pin) => {
+          const newState = createBlankState(name);
           newState.pin = pin;
           setProfileKey(name);
           try {
@@ -55,10 +54,25 @@
             clearProfileKey();
             return;
           }
-          location.href = "../index.html";
+          showSuccessAndRedirect(`Your sky is ready, ${name} &#9734;`);
         }
       });
     })();
+
+    // A brief confirmation moment before handing off to the map, instead
+    // of an instant jump — gives sign-in an actual "yes, that worked"
+    // beat rather than the page just vanishing.
+    function showSuccessAndRedirect(message) {
+      const card = document.getElementById("welcome-card");
+      card.innerHTML = `
+        <div class="welcome-brand"><img src="../favicon.svg" class="welcome-brand-icon" alt=""></div>
+        <p class="welcome-success">${message}</p>
+      `;
+      card.classList.remove("step-enter");
+      void card.offsetWidth;
+      card.classList.add("step-enter");
+      setTimeout(() => { location.href = "../index.html"; }, 550);
+    }
   </script>
   <script src="../js/registerSW.js"></script>
 </body>

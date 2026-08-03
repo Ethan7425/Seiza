@@ -48,6 +48,17 @@ function migrateState(state) {
   return state;
 }
 
+// A brand-new profile's starting state: every node locked, nothing
+// pre-filled. See progress.js for how "locked" vs "unlockable" gets
+// recomputed live from dependencies as nodes are mastered.
+function createBlankState(profileName) {
+  const progress = {};
+  NODES.forEach(node => {
+    progress[node.id] = { stage: "locked", notes: "", proof: [], updatedAt: null, quantity: "" };
+  });
+  return { profileName, progress, addedLibraryIds: [], nodePositions: {} };
+}
+
 function readLocalCache() {
   const raw = localStorage.getItem(CACHE_STORAGE_KEY);
   if (!raw) return null;

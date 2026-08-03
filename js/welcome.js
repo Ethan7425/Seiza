@@ -1,19 +1,14 @@
-// ---- Sign-in flow: name -> PIN (create or verify) -> quiz for new profiles ----
+// ---- Sign-in flow: name -> PIN (create or verify) ----
 
 let welcomeContainer;
 let onNameCheck = async () => null;
 let onSignIn = async () => false;
 let onCreateProfile = async () => {};
 
-let phase = "name"; // "name" | "pin" | "quiz"
+let phase = "name"; // "name" | "pin"
 let mode = null; // "existing" | "new" — set once the name lookup resolves
 let welcomeName = "";
 let existingData = null;
-let pendingPin = ""; // the PIN a new profile just created, carried into the quiz phase
-let welcomeAnswers = {};
-let quizIndex = 0;
-
-const quizQuestions = buildQuizQuestions();
 
 function initWelcome(container, handlers) {
   welcomeContainer = container;
@@ -23,15 +18,12 @@ function initWelcome(container, handlers) {
 
   phase = "name";
   mode = null;
-  welcomeAnswers = {};
-  quizIndex = 0;
   renderStep();
 }
 
 function renderStep() {
   if (phase === "name") renderNameStep();
-  else if (phase === "pin") renderPinStep();
-  else renderQuestionStep(quizQuestions[quizIndex]);
+  else renderPinStep();
   playStepEnter();
 }
 
@@ -46,10 +38,11 @@ function playStepEnter() {
 
 function renderNameStep() {
   welcomeContainer.innerHTML = `
-    <h1>Sign in</h1>
-    <p>Enter your name to sign in, or a new one to create a profile.</p>
-    <label for="name-input">Name</label>
-    <input id="name-input" type="text" autocomplete="off" placeholder="Your name" value="${welcomeName}">
+    <div class="welcome-brand"><img src="../favicon.svg" class="welcome-brand-icon" alt=""></div>
+    <h1>Welcome to Seiza</h1>
+    <p>A star chart for the things you're learning. Enter your name to continue — new here, or picking up where you left off.</p>
+    <label for="name-input">Your name</label>
+    <input id="name-input" type="text" autocomplete="off" placeholder="Type your name" value="${welcomeName}">
     <button type="button" id="welcome-next" class="btn-primary">Continue</button>
   `;
 
@@ -94,15 +87,16 @@ function renderPinStep() {
   const isNew = mode === "new";
 
   welcomeContainer.innerHTML = `
-    <h1>${isNew ? "Create a PIN" : "Enter your PIN"}</h1>
+    <div class="welcome-brand"><img src="../favicon.svg" class="welcome-brand-icon" alt=""></div>
+    <h1>${isNew ? `Nice to meet you, ${welcomeName}` : `Welcome back, ${welcomeName}`}</h1>
     <p>${isNew
-      ? `Pick a 4-digit PIN for "${welcomeName}" — just enough to keep this profile yours.`
-      : `Enter the 4-digit PIN for "${welcomeName}".`}</p>
+      ? "Set a 4-digit PIN so you can find your way back here from any device."
+      : "Enter your PIN to continue."}</p>
     <label for="pin-input">PIN</label>
     <input id="pin-input" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="&bull;&bull;&bull;&bull;" class="pin-input">
     <p class="welcome-error" hidden></p>
-    <button type="button" id="welcome-pin-next" class="btn-primary">${isNew ? "Continue" : "Sign in"}</button>
-    <div class="quiz-nav">
+    <button type="button" id="welcome-pin-next" class="btn-primary">${isNew ? "Create profile" : "Sign in"}</button>
+    <div class="step-nav">
       <button type="button" id="welcome-pin-back">&larr; Back</button>
     </div>
   `;
@@ -126,10 +120,9 @@ function renderPinStep() {
     errorEl.hidden = true;
 
     if (isNew) {
-      pendingPin = pin;
-      phase = "quiz";
-      quizIndex = 0;
-      renderStep();
+      pinBtn.disabled = true;
+      pinBtn.textContent = "Creating...";
+      await onCreateProfile(welcomeName, pin);
       return;
     }
 
@@ -150,6 +143,9 @@ function renderPinStep() {
       pinBtn.disabled = false;
       pinBtn.textContent = "Sign in";
       pinInput.value = "";
+      pinInput.classList.remove("shake");
+      void pinInput.offsetWidth;
+      pinInput.classList.add("shake");
       pinInput.focus();
     }
     // On success, onSignIn already redirected away.
@@ -167,47 +163,4 @@ function renderPinStep() {
     phase = "name";
     renderStep();
   });
-}
-
-function renderQuestionStep(q) {
-  welcomeContainer.innerHTML = `
-    <div class="quiz-progress">Question ${quizIndex + 1} of ${quizQuestions.length}</div>
-    <h2 class="quiz-question">${q.question}</h2>
-    <div class="quiz-options">
-      ${EXPERIENCE_LEVELS.map(level => `
-        <button type="button" class="quiz-option" data-level="${level.id}">${level.label}</button>
-      `).join("")}
-    </div>
-    <div class="quiz-nav">
-      <button type="button" id="welcome-back">&larr; Back</button>
-      <button type="button" id="welcome-skip">Skip quiz</button>
-    </div>
-  `;
-
-  welcomeContainer.querySelectorAll(".quiz-option").forEach(btn => {
-    btn.addEventListener("click", () => {
-      welcomeAnswers[q.branch] = btn.dataset.level;
-      quizIndex += 1;
-      if (quizIndex >= quizQuestions.length) {
-        finishWelcome();
-      } else {
-        renderStep();
-      }
-    });
-  });
-
-  welcomeContainer.querySelector("#welcome-back").addEventListener("click", () => {
-    if (quizIndex === 0) {
-      phase = "pin";
-    } else {
-      quizIndex -= 1;
-    }
-    renderStep();
-  });
-
-  welcomeContainer.querySelector("#welcome-skip").addEventListener("click", finishWelcome);
-}
-
-function finishWelcome() {
-  onCreateProfile(welcomeName, pendingPin, welcomeAnswers);
 }

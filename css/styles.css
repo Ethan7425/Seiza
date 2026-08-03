@@ -839,7 +839,7 @@ main {
   box-shadow: var(--shadow-card);
 }
 
-/* Replayed by JS on every step change (name -> PIN -> quiz), not just
+/* Replayed by JS on every step change (name -> PIN), not just
    on first paint, so moving between steps feels alive too. */
 .welcome-card.step-enter {
   animation: card-enter 0.4s ease-out;
@@ -893,55 +893,40 @@ main {
   color: var(--bg-deep);
 }
 
-/* ---- Welcome quiz ---- */
-.quiz-progress {
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-  margin-bottom: 0.6rem;
-}
-
-.quiz-question {
-  font-size: 1.05rem;
-  line-height: 1.4;
-  margin-bottom: 1.3rem;
-  text-align: left;
-}
-
-.quiz-options {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  margin-bottom: 1.4rem;
-}
-
-.quiz-option {
-  width: 100%;
-  padding: 0.6rem 0.8rem;
-  text-align: left;
-  border-color: var(--border-soft);
-}
-
-.quiz-option:hover {
-  background: rgba(216, 160, 92, 0.08);
-}
-
-.quiz-nav {
+/* ---- Welcome step nav ---- */
+.step-nav {
   display: flex;
   justify-content: space-between;
 }
 
-.quiz-nav button {
+.step-nav button {
   border: none;
   color: var(--ink-faint);
   font-size: 0.78rem;
   padding: 0.3rem 0.2rem;
 }
 
-.quiz-nav button:hover {
+.step-nav button:hover {
   color: var(--accent-warm);
   border: none;
+}
+
+/* ---- Sign-in brand + success moment ---- */
+.welcome-brand {
+  margin-bottom: 1rem;
+}
+
+.welcome-brand-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  box-shadow: var(--shadow-soft);
+}
+
+.welcome-success {
+  font-size: 1.05rem;
+  color: var(--ink);
+  padding: 1.2rem 0;
 }
 
 /* ---- Sign-in PIN step ---- */
@@ -949,6 +934,18 @@ main {
   text-align: center;
   font-size: 1.4rem;
   letter-spacing: 0.5em;
+}
+
+@keyframes pin-shake {
+  10%, 90% { transform: translateX(-2px); }
+  20%, 80% { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-6px); }
+  40%, 60% { transform: translateX(6px); }
+}
+
+.pin-input.shake {
+  animation: pin-shake 0.4s ease;
+  border-color: var(--danger);
 }
 
 .welcome-error {
@@ -1314,13 +1311,35 @@ main {
 }
 
 /* ---- Profile page ---- */
-.profile-name-section {
-  padding: 1.2rem 0;
-  margin-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border-soft);
+.profile-hero {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  padding: 1.2rem 0 0.8rem;
 }
 
-.profile-name-section label {
+.profile-avatar {
+  flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Georgia, serif;
+  font-size: 1.5rem;
+  color: var(--accent-warm);
+  background: var(--bg-deep);
+  border: 2px solid var(--accent-warm);
+  box-shadow: 0 0 14px rgba(216, 160, 92, 0.28);
+}
+
+.profile-hero-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-hero-info label {
   display: block;
   font-size: 0.72rem;
   letter-spacing: 0.08em;
@@ -1354,7 +1373,9 @@ main {
 .profile-name-hint {
   font-size: 0.75rem;
   color: var(--ink-faint);
-  margin-top: 0.6rem;
+  padding-bottom: 1.2rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-soft);
 }
 
 .profile-stats {
@@ -1404,6 +1425,33 @@ main {
 }
 
 /* ---- Achievements ---- */
+.achievements-summary {
+  margin-bottom: 1.8rem;
+}
+
+.achievements-summary-text {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--ink-faint);
+  margin-bottom: 0.5rem;
+}
+
+.achievements-summary-track {
+  height: 6px;
+  background: var(--border-soft);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.achievements-summary-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 3px;
+  background: var(--accent-warm);
+  box-shadow: 0 0 8px var(--accent-warm);
+  transition: width 0.6s ease;
+}
+
 .achievements-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -1461,10 +1509,27 @@ main {
   opacity: 1;
 }
 
+/* ---- Bottom tab bar (mobile app navigation) ---- */
+.tab-bar {
+  display: none;
+}
+
 /* ---- Responsive ---- */
 @media (max-width: 760px) {
   header {
     padding: 1rem 1.2rem;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(13, 10, 31, 0.92);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  /* Library/Achievements/Settings move to the bottom tab bar (Settings
+     lives one tap under Profile) — no need to repeat them up top too. */
+  .header-actions {
+    display: none;
   }
 
   .branch-progress {
@@ -1485,13 +1550,103 @@ main {
     position: fixed;
     left: 0;
     right: 0;
-    bottom: 0;
-    max-height: 60vh;
+    bottom: calc(64px + env(safe-area-inset-bottom));
+    max-height: 55vh;
     border-radius: 12px 12px 0 0;
     transform: translateY(100%);
   }
 
   .side-panel.open {
     transform: translateY(0);
+  }
+
+  /* Room at the bottom of every tab-bar page so content never sits
+     underneath the fixed bar. */
+  body.has-tab-bar {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  }
+
+  .tab-bar {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 200;
+    justify-content: space-around;
+    background: rgba(22, 16, 41, 0.92);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid var(--border-soft);
+    padding: 0.4rem 0.4rem calc(0.4rem + env(safe-area-inset-bottom));
+  }
+
+  .tab-bar-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    flex: 1;
+    min-height: 48px;
+    color: var(--ink-faint);
+    text-decoration: none;
+    font-size: 0.65rem;
+    letter-spacing: 0.02em;
+    border: none;
+    padding: 0.3rem 0.2rem;
+    transition: color 0.2s ease;
+  }
+
+  .tab-bar-item:hover {
+    color: var(--accent-warm);
+    background: none;
+  }
+
+  .tab-bar-item.active {
+    color: var(--accent-warm);
+  }
+
+  .tab-bar-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  /* Comfortable tap targets for real buttons/links — but not the
+     small fixed-size icon controls, which get their min-height reset
+     back to "just their own explicit size" right below. */
+  button,
+  .btn-link {
+    min-height: 44px;
+    padding: 0.6rem 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .zoom-controls button,
+  .panel-close,
+  .stage-btn,
+  .proof-remove {
+    min-height: 0;
+  }
+
+  /* Secondary pages (Profile, Achievements, Admin) use .admin-wrap's
+     desktop-sized padding by default — too roomy on a phone. */
+  .admin-wrap {
+    padding: 1.6rem 1.2rem 2rem;
+  }
+
+  .centered-page {
+    padding: 1.6rem 1.2rem;
+  }
+
+  .profile-stats {
+    gap: 1.4rem 2rem;
+  }
+
+  .achievements-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.7rem;
   }
 }

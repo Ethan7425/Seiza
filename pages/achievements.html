@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Seiza — Achievements</title>
   <link rel="stylesheet" href="../css/styles.css">
   <link rel="manifest" href="../manifest.json">
@@ -10,15 +10,52 @@
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0d0a1f">
 </head>
-<body>
+<body class="has-tab-bar">
 
   <div class="admin-wrap">
     <a href="../index.html" class="back-link">&larr; Back to map</a>
     <h1>Achievements</h1>
-    <p class="admin-intro" id="achievements-summary"></p>
+
+    <div class="achievements-summary">
+      <span class="achievements-summary-text" id="achievements-summary"></span>
+      <div class="achievements-summary-track">
+        <div class="achievements-summary-fill" id="achievements-summary-fill"></div>
+      </div>
+    </div>
 
     <div id="achievements-grid" class="achievements-grid"></div>
   </div>
+
+  <nav class="tab-bar">
+    <a href="../index.html" class="tab-bar-item">
+      <svg class="tab-bar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 8 L12 17 M17 6 L12 17 M6 8 L17 6"/>
+        <circle cx="6" cy="8" r="1.7" fill="currentColor" stroke="none"/>
+        <circle cx="17" cy="6" r="1.7" fill="currentColor" stroke="none"/>
+        <circle cx="12" cy="17" r="1.7" fill="currentColor" stroke="none"/>
+      </svg>
+      <span>Map</span>
+    </a>
+    <a href="library.html" class="tab-bar-item">
+      <svg class="tab-bar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 5h16M4 12h16M4 19h10"/>
+      </svg>
+      <span>Library</span>
+    </a>
+    <a href="achievements.html" class="tab-bar-item active">
+      <svg class="tab-bar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3l2.5 6 6.5.5-5 4.3 1.5 6.2L12 16.5 6.5 20l1.5-6.2-5-4.3 6.5-.5z"/>
+      </svg>
+      <span>Achievements</span>
+    </a>
+    <a href="profile.html" class="tab-bar-item">
+      <svg class="tab-bar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+        <circle cx="12" cy="12" r="9"/>
+        <circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none"/>
+      </svg>
+      <span>Profile</span>
+    </a>
+  </nav>
 
   <script src="../js/data.js"></script>
   <script src="../js/progress.js"></script>
@@ -39,7 +76,9 @@
       const unlockedIds = new Set(unlocked.map(a => a.id));
 
       document.getElementById("achievements-summary").textContent =
-        `${unlocked.length} of ${ACHIEVEMENTS.length} unlocked.`;
+        `${unlocked.length} of ${ACHIEVEMENTS.length} unlocked`;
+      document.getElementById("achievements-summary-fill").style.width =
+        `${Math.round((unlocked.length / ACHIEVEMENTS.length) * 100)}%`;
 
       document.getElementById("achievements-grid").innerHTML = ACHIEVEMENTS.map(a => {
         const isUnlocked = unlockedIds.has(a.id);

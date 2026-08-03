@@ -199,7 +199,33 @@ const LIBRARY_NODES = [
     dependsOn: [] },
   { id: "color-theory", name: "Color Theory", branch: "sensory-craft",
     description: "How hue, saturation, and contrast combine to make color choices that work together.",
-    dependsOn: [] }
+    dependsOn: [] },
+
+  // Fitness & Movement
+  { id: "pushups", name: "Pushups", branch: "fitness-movement",
+    description: "Building upper-body and core strength with good push-up form.",
+    dependsOn: [], quantityLabel: "reps" },
+  { id: "running", name: "Running", branch: "fitness-movement",
+    description: "Building aerobic base and endurance through regular running.",
+    dependsOn: [], quantityLabel: "km" },
+  { id: "pull-ups", name: "Pull-ups", branch: "fitness-movement",
+    description: "Building back and grip strength through strict pull-ups.",
+    dependsOn: [], quantityLabel: "reps" },
+  { id: "plank-hold", name: "Plank Hold", branch: "fitness-movement",
+    description: "Core stability and endurance, held in a straight-body plank position.",
+    dependsOn: [], quantityLabel: "seconds" },
+  { id: "squats", name: "Squats", branch: "fitness-movement",
+    description: "Building lower-body strength with good squat depth and form.",
+    dependsOn: [], quantityLabel: "reps" },
+  { id: "flexibility-mobility", name: "Flexibility & Mobility", branch: "fitness-movement",
+    description: "Stretching and mobility work to keep joints healthy and ranges of motion open.",
+    dependsOn: [] },
+  { id: "strength-training-principles", name: "Strength Training Principles", branch: "fitness-movement",
+    description: "Core ideas behind getting stronger: progressive overload, recovery, and programming.",
+    dependsOn: ["pushups", "squats"] },
+  { id: "handstand-practice", name: "Handstand Practice", branch: "fitness-movement",
+    description: "Building the balance and shoulder strength to hold a freestanding handstand.",
+    dependsOn: ["plank-hold"], quantityLabel: "seconds" }
 ];
 
 // Rough centers of each branch's existing cluster, used as a fallback
@@ -220,7 +246,8 @@ const BRANCH_ANCHORS = {
   "body-survival": { x: 1050, y: 830 },
   "mechanical-curiosities": { x: 250, y: 1050 },
   "games-systems": { x: 550, y: 1050 },
-  "sensory-craft": { x: 850, y: 1050 }
+  "sensory-craft": { x: 850, y: 1050 },
+  "fitness-movement": { x: 1100, y: 1050 }
 };
 
 // Deterministic (not random) offset so a given node always lands in
