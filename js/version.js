@@ -6,13 +6,20 @@
 // Semantic-ish versioning: patch (x.y.Z) for small fixes/tweaks,
 // minor (x.Y.0) for real feature additions, major (X.0.0) reserved
 // for genuinely big overhauls.
-const APP_VERSION = "1.0.3";
+const APP_VERSION = "1.0.4";
 
 // One short line per change, newest entry first — shown in Settings
 // so it's easy to see what actually changed without digging through
 // git. Starts fresh from the switch to semver rather than backfilling
 // every earlier "vN" build.
 const CHANGELOG = [
+  {
+    version: "1.0.4",
+    date: "2026-08-04",
+    notes: [
+      "Added real buffer space below the tab bar — it was sitting so close to the screen edge that taps were getting hijacked by the phone's own edge-swipe gesture"
+    ]
+  },
   {
     version: "1.0.3",
     date: "2026-08-04",

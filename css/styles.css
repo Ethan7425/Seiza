@@ -1837,13 +1837,19 @@ label[for="suggest-text"] {
     align-items: stretch;
     /* An explicit floor on the bar itself, not just its items — belt
        and suspenders against any flex-shrink quirk collapsing it. */
-    min-height: calc(48px + 0.6rem + env(safe-area-inset-bottom));
+    min-height: calc(48px + 0.6rem + env(safe-area-inset-bottom) + 14px);
     justify-content: space-around;
     background: rgba(22, 16, 41, 0.92);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     border-top: 1px solid var(--border-soft);
-    padding: 0.4rem 0.4rem calc(0.4rem + env(safe-area-inset-bottom));
+    /* env(safe-area-inset-bottom) alone is the bare minimum Apple
+       reports for the home-indicator strip — it isn't a real buffer
+       against the edge-swipe gesture zone above it, which is why taps
+       right at the bottom were getting hijacked into the system
+       dock/switcher gesture. The extra 14px is genuine breathing room
+       past that, not just the technical minimum. */
+    padding: 0.4rem 0.4rem calc(0.4rem + env(safe-area-inset-bottom) + 14px);
   }
 
   .tab-bar-item {
