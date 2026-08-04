@@ -7,13 +7,14 @@
 
 // Keep this in sync with APP_VERSION in js/version.js — bumping it
 // here is what actually forces stale caches to clear on old devices.
-const CACHE_NAME = "seiza-v1.0.0";
+const CACHE_NAME = "seiza-v1.0.1";
 
 const APP_SHELL = [
   "./",
   "./index.html",
   "./css/styles.css",
   "./js/version.js",
+  "./js/tabBarHeight.js",
   "./js/data.js",
   "./js/progress.js",
   "./js/db.js",

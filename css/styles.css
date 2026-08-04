@@ -1805,7 +1805,16 @@ label[for="suggest-text"] {
     position: fixed;
     left: 0;
     right: 0;
-    bottom: calc(64px + env(safe-area-inset-bottom));
+    /* --tab-bar-height is measured from the real, rendered tab bar by
+       js/tabBarHeight.js — a hardcoded guess here (the old 64px) can
+       silently drift from the actual height on a real device (a
+       longer safe-area inset, larger accessibility text settings, a
+       label wrapping to two lines — none of which desktop responsive
+       mode ever simulates), which is exactly what caused content to
+       sit slightly under the bar despite looking correct in testing.
+       Already includes the bar's own safe-area padding, so it isn't
+       added again here. */
+    bottom: var(--tab-bar-height, 64px);
     max-height: 55vh;
     border-radius: 12px 12px 0 0;
     transform: translateY(100%);
@@ -1817,9 +1826,10 @@ label[for="suggest-text"] {
   }
 
   /* Room at the bottom of every tab-bar page so content never sits
-     underneath the fixed bar. */
+     underneath the fixed bar — see the .side-panel comment above for
+     why this reads the measured height instead of a hardcoded one. */
   body.has-tab-bar {
-    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+    padding-bottom: var(--tab-bar-height, 64px);
   }
 
   .tab-bar {
