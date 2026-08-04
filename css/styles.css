@@ -1825,20 +1825,15 @@ label[for="suggest-text"] {
     transform: translateY(0);
   }
 
-  /* Room at the bottom of every tab-bar page so content never sits
-     underneath the fixed bar — see the .side-panel comment above for
-     why this reads the measured height instead of a hardcoded one. */
-  body.has-tab-bar {
-    padding-bottom: var(--tab-bar-height, 64px);
-  }
+  /* The tab bar is a normal flex child now (see below), not a
+     position:fixed overlay with a hand-reserved gap elsewhere — so
+     there's nothing here to keep in sync with its real height
+     anymore. The browser's own layout guarantees the space above it
+     is always exactly right, on any device, with no guessing. */
 
   .tab-bar {
     display: flex;
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 200;
+    flex-shrink: 0;
     justify-content: space-around;
     background: rgba(22, 16, 41, 0.92);
     backdrop-filter: blur(14px);
