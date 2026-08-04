@@ -1834,6 +1834,10 @@ label[for="suggest-text"] {
   .tab-bar {
     display: flex;
     flex-shrink: 0;
+    align-items: stretch;
+    /* An explicit floor on the bar itself, not just its items — belt
+       and suspenders against any flex-shrink quirk collapsing it. */
+    min-height: calc(48px + 0.6rem + env(safe-area-inset-bottom));
     justify-content: space-around;
     background: rgba(22, 16, 41, 0.92);
     backdrop-filter: blur(14px);
