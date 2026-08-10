@@ -3,7 +3,6 @@
 let panelContainer;
 let panelBackdropEl;
 let onStageChange = () => {};
-let onNotesChange = () => {};
 let onProofAdd = () => {};
 let onProofRemove = () => {};
 let onRemoveNode = () => {};
@@ -14,7 +13,6 @@ function initPanel(el, handlers) {
   panelContainer = el;
   panelBackdropEl = document.getElementById("panel-backdrop");
   onStageChange = handlers.onStageChange;
-  onNotesChange = handlers.onNotesChange;
   onProofAdd = handlers.onProofAdd;
   onProofRemove = handlers.onProofRemove;
   onRemoveNode = handlers.onRemoveNode;
@@ -109,7 +107,7 @@ function renderUnlockedPanel(node, entry, stage, progress) {
 
     <div class="panel-section">
       <h3>Notes</h3>
-      <textarea class="panel-notes" placeholder="Anything worth remembering — resources, gotchas, next steps...">${entry.notes || ""}</textarea>
+      <a href="obsidian://" class="btn-link panel-notes-link">Open in Obsidian</a>
     </div>
 
     <div class="panel-section">
@@ -163,11 +161,6 @@ function openPanel(nodeId, progress) {
       onStageChange(node.id, newStage);
     });
   });
-
-  const notesEl = panelContainer.querySelector(".panel-notes");
-  if (notesEl) {
-    notesEl.addEventListener("input", () => onNotesChange(node.id, notesEl.value));
-  }
 
   const quantityEl = panelContainer.querySelector(".stage-quantity");
   if (quantityEl) {

@@ -734,6 +734,12 @@ main {
   margin-bottom: 0.5rem;
 }
 
+.panel-notes-link {
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+
 .panel-list {
   list-style: none;
   display: flex;

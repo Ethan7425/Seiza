@@ -6,13 +6,20 @@
 // Semantic-ish versioning: patch (x.y.Z) for small fixes/tweaks,
 // minor (x.Y.0) for real feature additions, major (X.0.0) reserved
 // for genuinely big overhauls.
-const APP_VERSION = "1.0.5";
+const APP_VERSION = "1.0.6";
 
 // One short line per change, newest entry first — shown in Settings
 // so it's easy to see what actually changed without digging through
 // git. Starts fresh from the switch to semver rather than backfilling
 // every earlier "vN" build.
 const CHANGELOG = [
+  {
+    version: "1.0.6",
+    date: "2026-08-10",
+    notes: [
+      "Test button in Settings for opening the Obsidian app via its URL scheme"
+    ]
+  },
   {
     version: "1.0.5",
     date: "2026-08-04",

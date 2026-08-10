@@ -37,7 +37,6 @@ function runMapPage(state) {
   initGraph(svgEl, { onNodeClick: nodeId => openPanel(nodeId, state.progress) });
   initPanel(panelEl, {
     onStageChange: handleStageChange,
-    onNotesChange: handleNotesChange,
     onProofAdd: handleProofAdd,
     onProofRemove: handleProofRemove,
     onRemoveNode: handleRemoveNode,
@@ -77,11 +76,6 @@ function runMapPage(state) {
         showToast(`${n.name} unlocked`, "unlocked");
       }
     });
-  }
-
-  function handleNotesChange(nodeId, text) {
-    state.progress[nodeId].notes = text;
-    saveState(state);
   }
 
   function handleQuantityChange(nodeId, text) {
