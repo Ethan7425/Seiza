@@ -35,6 +35,8 @@ function clearProfileKey() {
 //   but is now a fixed 10am-local constant in send-nudges.mjs, so
 //   those two fields are no longer part of the shape — old profiles
 //   that still have them just carry harmless unused data.
+// - removedCoreNodeIds didn't exist before starter nodes were
+//   removable too, not just library-added ones
 function migrateState(state) {
   Object.keys(state.progress).forEach(id => {
     const entry = state.progress[id];
@@ -46,6 +48,9 @@ function migrateState(state) {
   });
   if (!Array.isArray(state.addedLibraryIds)) {
     state.addedLibraryIds = [];
+  }
+  if (!Array.isArray(state.removedCoreNodeIds)) {
+    state.removedCoreNodeIds = [];
   }
   if (!state.nodePositions || typeof state.nodePositions !== "object") {
     state.nodePositions = {};
@@ -71,7 +76,7 @@ function createBlankState(profileName) {
     progress[node.id] = { stage: "locked", notes: "", proof: [], updatedAt: null, quantity: "" };
   });
   return {
-    profileName, progress, addedLibraryIds: [], nodePositions: {},
+    profileName, progress, addedLibraryIds: [], removedCoreNodeIds: [], nodePositions: {},
     pushSubscription: null, reminderTimezoneOffsetMinutes: null, lastNudgeSentDate: null
   };
 }

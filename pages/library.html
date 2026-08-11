@@ -66,21 +66,44 @@
       }
       initLibraryPage(document.getElementById("library-content"), {
         onAdd: handleAddLibraryNode,
+        onAddBranch: handleAddBranch,
         isAdded: id => state.addedLibraryIds.includes(id)
       });
     })();
+
+    // Places one node, given the map's current state — shared by the
+    // single-node and whole-branch add paths so the placement logic
+    // (and the bookkeeping around it) only exists once.
+    function addLibraryNodeToState(template) {
+      const pos = placeNode(template, buildActiveNodes(state));
+      state.addedLibraryIds.push(template.id);
+      state.nodePositions[template.id] = pos;
+      state.progress[template.id] = { stage: "locked", notes: "", proof: [], updatedAt: null, quantity: "" };
+    }
 
     function handleAddLibraryNode(nodeId) {
       if (state.addedLibraryIds.includes(nodeId)) return;
       const template = LIBRARY_NODES.find(n => n.id === nodeId);
       if (!template) return;
 
-      const pos = placeNode(template, buildActiveNodes(state));
-      state.addedLibraryIds.push(nodeId);
-      state.nodePositions[nodeId] = pos;
-      state.progress[nodeId] = { stage: "locked", notes: "", proof: [], updatedAt: null, quantity: "" };
+      addLibraryNodeToState(template);
       saveState(state);
+      refreshLibraryResults();
+    }
 
+    // Adding an entire branch at once means anything that depends on
+    // a sibling within the same branch (e.g. Basic Astronomy needing
+    // Constellations & Star Navigation) is guaranteed to actually be
+    // reachable, instead of silently staying locked on a dependency
+    // that was never added. Nodes are added in the branch's own
+    // definition order, so within-branch dependencies are already
+    // present by the time a later node's placement looks for them.
+    function handleAddBranch(branchId) {
+      const toAdd = LIBRARY_NODES.filter(n => n.branch === branchId && !state.addedLibraryIds.includes(n.id));
+      if (!toAdd.length) return;
+
+      toAdd.forEach(addLibraryNodeToState);
+      saveState(state);
       refreshLibraryResults();
     }
   </script>

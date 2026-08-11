@@ -40,8 +40,7 @@ function runMapPage(state) {
     onProofAdd: handleProofAdd,
     onProofRemove: handleProofRemove,
     onRemoveNode: handleRemoveNode,
-    onQuantityChange: handleQuantityChange,
-    isCoreNode: nodeId => NODES.some(n => n.id === nodeId)
+    onQuantityChange: handleQuantityChange
   });
   initToasts(toastContainerEl);
   refreshAll();
@@ -110,6 +109,13 @@ function runMapPage(state) {
     delete state.progress[nodeId];
     delete state.nodePositions[nodeId];
     state.addedLibraryIds = state.addedLibraryIds.filter(id => id !== nodeId);
+    // Starter nodes aren't tracked by addedLibraryIds — without this,
+    // removing one would wipe its progress but it'd just reappear
+    // (reset to locked) on the next reload, since NODES is otherwise
+    // always included in full.
+    if (NODES.some(n => n.id === nodeId) && !state.removedCoreNodeIds.includes(nodeId)) {
+      state.removedCoreNodeIds.push(nodeId);
+    }
     saveState(state);
 
     removeNodeFromGraph(nodeId);

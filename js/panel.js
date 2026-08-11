@@ -7,7 +7,6 @@ let onProofAdd = () => {};
 let onProofRemove = () => {};
 let onRemoveNode = () => {};
 let onQuantityChange = () => {};
-let isCoreNode = () => true;
 
 function initPanel(el, handlers) {
   panelContainer = el;
@@ -17,7 +16,6 @@ function initPanel(el, handlers) {
   onProofRemove = handlers.onProofRemove;
   onRemoveNode = handlers.onRemoveNode;
   onQuantityChange = handlers.onQuantityChange;
-  isCoreNode = handlers.isCoreNode;
 
   if (panelBackdropEl) {
     panelBackdropEl.addEventListener("click", closePanel);
@@ -26,6 +24,16 @@ function initPanel(el, handlers) {
 
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
+
+// A dependency can point at a library node that hasn't actually been
+// added to the map yet (that's allowed — see library.js), so it won't
+// be in ACTIVE_NODES. Falling back to the full catalog here is what
+// keeps the panel from crashing on those instead of just not opening.
+function findAnyNode(id) {
+  return ACTIVE_NODES.find(n => n.id === id)
+    || NODES.find(n => n.id === id)
+    || LIBRARY_NODES.find(n => n.id === id);
 }
 
 function stageDotsHtml(stage) {
@@ -41,8 +49,8 @@ function stageDotsHtml(stage) {
 // hidden until it's actually reachable.
 function renderLockedPanel(node, progress) {
   const missing = node.dependsOn
-    .map(id => ACTIVE_NODES.find(n => n.id === id))
-    .filter(d => effectiveStage(d, progress) !== "mastered");
+    .map(id => findAnyNode(id))
+    .filter(d => d && effectiveStage(d, progress) !== "mastered");
 
   return `
     <button class="panel-close" aria-label="Close panel">&times;</button>
@@ -54,9 +62,8 @@ function renderLockedPanel(node, progress) {
 }
 
 function renderUnlockedPanel(node, entry, stage, progress) {
-  const deps = node.dependsOn.map(id => ACTIVE_NODES.find(n => n.id === id));
+  const deps = node.dependsOn.map(id => findAnyNode(id)).filter(Boolean);
   const unlocks = ACTIVE_NODES.filter(n => n.dependsOn.includes(node.id));
-  const removable = !isCoreNode(node.id);
 
   return `
     <button class="panel-close" aria-label="Close panel">&times;</button>
@@ -129,17 +136,15 @@ function renderUnlockedPanel(node, entry, stage, progress) {
       </div>
     </div>
 
-    ${removable ? `
-      <div class="panel-section panel-section-remove">
-        ${unlocks.length ? `
-          <p class="panel-remove-blocked">
-            Can't remove — required by ${unlocks.map(u => `<strong>${u.name}</strong>`).join(", ")}.
-          </p>
-        ` : `
-          <button type="button" class="panel-remove-btn btn-danger">Remove from map</button>
-        `}
-      </div>
-    ` : ""}
+    <div class="panel-section panel-section-remove">
+      ${unlocks.length ? `
+        <p class="panel-remove-blocked">
+          Can't remove — required by ${unlocks.map(u => `<strong>${u.name}</strong>`).join(", ")}.
+        </p>
+      ` : `
+        <button type="button" class="panel-remove-btn btn-danger">Remove from map</button>
+      `}
+    </div>
   `;
 }
 

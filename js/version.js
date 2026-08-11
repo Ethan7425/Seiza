@@ -6,13 +6,22 @@
 // Semantic-ish versioning: patch (x.y.Z) for small fixes/tweaks,
 // minor (x.Y.0) for real feature additions, major (X.0.0) reserved
 // for genuinely big overhauls.
-const APP_VERSION = "1.1.0";
+const APP_VERSION = "1.2.0";
 
 // One short line per change, newest entry first — shown in Settings
 // so it's easy to see what actually changed without digging through
 // git. Starts fresh from the switch to semver rather than backfilling
 // every earlier "vN" build.
 const CHANGELOG = [
+  {
+    version: "1.2.0",
+    date: "2026-08-11",
+    notes: [
+      "Fixed: a locked node whose dependency was only in the library (not yet added to the map) silently failed to open when tapped",
+      "Library reorganized: the 4 vague grab-bag branches split into 16 focused ones (e.g. Astronomy & the Sky, Backend & APIs)",
+      "Library page now shows branches as clickable cards you preview, instead of one long flat list of every skill"
+    ]
+  },
   {
     version: "1.1.0",
     date: "2026-08-11",

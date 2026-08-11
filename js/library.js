@@ -14,108 +14,110 @@
 // that only lights up once you've added every link in it.
 
 const LIBRARY_NODES = [
-  { id: "typescript", name: "TypeScript", branch: "coding",
+  { id: "typescript", name: "TypeScript", branch: "backend-apis",
     description: "Adding static types on top of JavaScript to catch bugs before they run.",
     dependsOn: ["js-basics"] },
-  { id: "api-design", name: "API Design", branch: "coding",
+  { id: "api-design", name: "API Design", branch: "backend-apis",
     description: "Designing endpoints and data shapes that are predictable to build against.",
     dependsOn: ["dom-manipulation"] },
-  { id: "sql-basics", name: "SQL Basics", branch: "coding",
+  { id: "sql-basics", name: "SQL Basics", branch: "backend-apis",
     description: "Querying and shaping relational data with SELECT, JOIN, and friends.",
     dependsOn: ["js-basics"] },
-  { id: "nodejs-express", name: "Node.js & Express", branch: "coding",
+  { id: "nodejs-express", name: "Node.js & Express", branch: "backend-apis",
     description: "Building server-side applications and APIs with Node.js and the Express framework.",
     dependsOn: ["sql-basics"] },
-  { id: "supabase-auth-concepts", name: "Supabase & Auth Concepts", branch: "coding",
+  { id: "supabase-auth-concepts", name: "Supabase & Auth Concepts", branch: "backend-apis",
     description: "Using Supabase for a backend database plus handling user authentication and sessions.",
     dependsOn: ["nodejs-express"] },
 
-  { id: "hot-cold-reading", name: "Hot Reading", branch: "mentalism",
+  { id: "hot-cold-reading", name: "Hot Reading", branch: "advanced-reading",
     description: "Working from information gathered beforehand rather than cold, in-the-moment reads.",
     dependsOn: ["cold-reading-basics"] },
-  { id: "nlp-language-patterns", name: "NLP Language Patterns", branch: "mentalism",
+  { id: "nlp-language-patterns", name: "NLP Language Patterns", branch: "advanced-reading",
     description: "Presuppositions and phrasing patterns drawn from neuro-linguistic programming.",
     dependsOn: ["cold-reading-basics"] },
-  { id: "reading-microexpressions", name: "Reading Microexpressions", branch: "mentalism",
+  { id: "reading-microexpressions", name: "Reading Microexpressions", branch: "advanced-reading",
     description: "Spotting the brief, involuntary facial expressions that reveal a person's true emotion.",
     dependsOn: ["cold-reading-basics"] },
-  { id: "memory-techniques", name: "Memory Palaces / Memory Techniques", branch: "mentalism",
+  { id: "memory-techniques", name: "Memory Palaces / Memory Techniques", branch: "magic-memory",
     description: "Applying memory methods like the memory palace to feats of recall used in mentalism routines.",
     dependsOn: [] },
-  { id: "basic-sleight-of-hand", name: "Basic Sleight of Hand", branch: "mentalism",
+  { id: "basic-sleight-of-hand", name: "Basic Sleight of Hand", branch: "magic-memory",
     description: "Fundamental hand moves for concealing and controlling small objects like cards and coins.",
     dependsOn: [] },
 
-  { id: "negotiation-tactics", name: "Negotiation Tactics", branch: "people",
+  { id: "negotiation-tactics", name: "Negotiation Tactics", branch: "negotiation-social",
     description: "Concrete moves for a negotiation: anchoring, framing, knowing your walk-away point.",
     dependsOn: ["active-listening"] },
-  { id: "conflict-resolution", name: "Conflict Resolution", branch: "people",
+  { id: "conflict-resolution", name: "Conflict Resolution", branch: "negotiation-social",
     description: "De-escalating disagreements and finding a resolution both sides can live with.",
     dependsOn: ["active-listening"] },
-  { id: "reading-a-room", name: "Reading a Room", branch: "people",
+  { id: "reading-a-room", name: "Reading a Room", branch: "negotiation-social",
     description: "Picking up on a group's collective mood and social dynamics as you walk in.",
     dependsOn: ["active-listening"] },
-  { id: "negotiation-basics", name: "Negotiation Basics", branch: "people",
+  { id: "negotiation-basics", name: "Negotiation Basics", branch: "negotiation-social",
     description: "Foundational tactics for reaching agreements: anchoring, framing, and knowing your walk-away point.",
     dependsOn: ["persuasion-principles"] },
 
-  { id: "sleep-fundamentals", name: "Sleep Fundamentals", branch: "life",
+  { id: "sleep-fundamentals", name: "Sleep Fundamentals", branch: "rest-time",
     description: "The basics of sleep hygiene and circadian rhythm that actually move the needle.",
     dependsOn: [] },
-  { id: "basic-car-maintenance", name: "Basic Car Maintenance", branch: "life",
+  { id: "basic-car-maintenance", name: "Basic Car Maintenance", branch: "home-money",
     description: "Checking fluids, changing a tire, and knowing when something needs a mechanic.",
     dependsOn: [] },
-  { id: "personal-finance-basics", name: "Personal Finance Basics", branch: "life",
+  { id: "personal-finance-basics", name: "Personal Finance Basics", branch: "home-money",
     description: "Managing income, saving, debt, and basic investing beyond just day-to-day budgeting.",
     dependsOn: [] },
-  { id: "time-management-systems", name: "Time Management Systems", branch: "life",
+  { id: "time-management-systems", name: "Time Management Systems", branch: "rest-time",
     description: "Structured methods like time-blocking and GTD for organizing a week's worth of work.",
     dependsOn: [] },
-  { id: "basic-home-repairs", name: "Basic Home Repairs", branch: "life",
+  { id: "basic-home-repairs", name: "Basic Home Repairs", branch: "home-money",
     description: "Handling common household fixes — patching drywall, fixing a leaky faucet, unclogging a drain.",
     dependsOn: [] },
 
-  { id: "morse-code", name: "Morse Code", branch: "random",
+  { id: "morse-code", name: "Morse Code", branch: "signals-communication",
     description: "Reading and sending the basic alphabet in dots and dashes.",
     dependsOn: [] },
-  { id: "card-counting-basics", name: "Card Counting Basics", branch: "random",
+  { id: "card-counting-basics", name: "Card Counting Basics", branch: "games-probability",
     description: "The Hi-Lo counting system for blackjack, as a mental-math exercise as much as anything.",
     dependsOn: ["memory-palace"] },
 
-  // Nature & Science
-  { id: "cloud-types-weather-reading", name: "Cloud Types & Weather Reading", branch: "nature-science",
-    description: "Identifying cloud formations and using them to predict short-term weather changes.",
-    dependsOn: [] },
-  { id: "constellations-star-navigation", name: "Constellations & Star Navigation", branch: "nature-science",
+  // Astronomy & the Sky
+  { id: "constellations-star-navigation", name: "Constellations & Star Navigation", branch: "astronomy-sky",
     description: "Recognizing major constellations and using the night sky to find direction.",
     dependsOn: [] },
-  { id: "edible-wild-plants", name: "Edible Wild Plants", branch: "nature-science",
-    description: "Identifying common wild plants that are safe to forage and eat.",
-    dependsOn: [] },
-  { id: "basic-astronomy", name: "Basic Astronomy", branch: "nature-science",
+  { id: "basic-astronomy", name: "Basic Astronomy", branch: "astronomy-sky",
     description: "The basics of the solar system, stars, and how astronomers study the universe.",
     dependsOn: ["constellations-star-navigation"] },
-  { id: "how-vaccines-work", name: "How Vaccines Work", branch: "nature-science",
-    description: "How vaccines train the immune system to recognize and fight off a pathogen.",
-    dependsOn: [] },
-  { id: "geology-rock-types", name: "Geology & Rock Types", branch: "nature-science",
-    description: "Telling apart igneous, sedimentary, and metamorphic rocks and how each one forms.",
-    dependsOn: [] },
-  { id: "tide-moon-cycles", name: "Tide & Moon Cycles", branch: "nature-science",
+  { id: "tide-moon-cycles", name: "Tide & Moon Cycles", branch: "astronomy-sky",
     description: "How the moon's gravity drives ocean tides, and the rhythm of its monthly phases.",
     dependsOn: [] },
 
-  // Signals & Codes
-  { id: "nato-phonetic-alphabet", name: "NATO Phonetic Alphabet", branch: "signals-codes",
+  // Earth & Life Science
+  { id: "cloud-types-weather-reading", name: "Cloud Types & Weather Reading", branch: "earth-life-science",
+    description: "Identifying cloud formations and using them to predict short-term weather changes.",
+    dependsOn: [] },
+  { id: "edible-wild-plants", name: "Edible Wild Plants", branch: "earth-life-science",
+    description: "Identifying common wild plants that are safe to forage and eat.",
+    dependsOn: [] },
+  { id: "how-vaccines-work", name: "How Vaccines Work", branch: "earth-life-science",
+    description: "How vaccines train the immune system to recognize and fight off a pathogen.",
+    dependsOn: [] },
+  { id: "geology-rock-types", name: "Geology & Rock Types", branch: "earth-life-science",
+    description: "Telling apart igneous, sedimentary, and metamorphic rocks and how each one forms.",
+    dependsOn: [] },
+
+  // Signals & Communication
+  { id: "nato-phonetic-alphabet", name: "NATO Phonetic Alphabet", branch: "signals-communication",
     description: "The Alpha-Bravo-Charlie alphabet used to spell out letters clearly over radio or phone.",
     dependsOn: [] },
-  { id: "semaphore-flags", name: "Semaphore Flags", branch: "signals-codes",
+  { id: "semaphore-flags", name: "Semaphore Flags", branch: "signals-communication",
     description: "Signaling letters and messages over distance using handheld flag positions.",
     dependsOn: [] },
-  { id: "basic-cryptography-ciphers", name: "Basic Cryptography & Ciphers", branch: "signals-codes",
+  { id: "basic-cryptography-ciphers", name: "Basic Cryptography & Ciphers", branch: "signals-communication",
     description: "Classic ciphers like Caesar and Vigenère, and the basic ideas behind encoding secret messages.",
     dependsOn: [] },
-  { id: "sign-language-basics", name: "ASL Alphabet / Sign Language Basics", branch: "signals-codes",
+  { id: "sign-language-basics", name: "ASL Alphabet / Sign Language Basics", branch: "signals-communication",
     description: "The ASL fingerspelling alphabet and a handful of common signs.",
     dependsOn: [] },
 
@@ -136,25 +138,27 @@ const LIBRARY_NODES = [
     description: "Core gods, myths, and stories from Greek, Norse, and Japanese mythology.",
     dependsOn: [] },
 
-  // Body & Survival
-  { id: "basic-wilderness-survival", name: "Basic Wilderness Survival", branch: "body-survival",
+  // Wilderness Survival
+  { id: "basic-wilderness-survival", name: "Basic Wilderness Survival", branch: "wilderness-survival",
     description: "Core priorities when stranded outdoors: shelter, water, warmth, and signaling for help.",
     dependsOn: [] },
-  { id: "reading-compass-map", name: "Reading a Compass & Map", branch: "body-survival",
+  { id: "reading-compass-map", name: "Reading a Compass & Map", branch: "wilderness-survival",
     description: "Orienting a map, taking a bearing, and navigating cross-country with a compass.",
     dependsOn: [] },
-  { id: "sailing-climbing-knots", name: "Sailing/Climbing Knots", branch: "body-survival",
+  { id: "sailing-climbing-knots", name: "Sailing/Climbing Knots", branch: "wilderness-survival",
     description: "Specialized knots used in sailing and climbing where reliability really matters.",
     dependsOn: ["knot-tying"] },
-  { id: "how-sleep-works", name: "How Sleep Actually Works", branch: "body-survival",
-    description: "The stages of sleep and circadian rhythm, and why both matter for how rested you feel.",
-    dependsOn: [] },
-  { id: "basic-nutrition-science", name: "Basic Nutrition Science", branch: "body-survival",
-    description: "How macronutrients, calories, and micronutrients actually affect the body.",
-    dependsOn: [] },
-  { id: "fire-starting-methods", name: "Fire-Starting Methods", branch: "body-survival",
+  { id: "fire-starting-methods", name: "Fire-Starting Methods", branch: "wilderness-survival",
     description: "Multiple ways to start a fire without matches, from friction to flint and steel.",
     dependsOn: ["basic-wilderness-survival"] },
+
+  // Sleep & Nutrition Science
+  { id: "how-sleep-works", name: "How Sleep Actually Works", branch: "sleep-nutrition-science",
+    description: "The stages of sleep and circadian rhythm, and why both matter for how rested you feel.",
+    dependsOn: [] },
+  { id: "basic-nutrition-science", name: "Basic Nutrition Science", branch: "sleep-nutrition-science",
+    description: "How macronutrients, calories, and micronutrients actually affect the body.",
+    dependsOn: [] },
 
   // Mechanical & Practical Curiosities
   { id: "how-engines-work", name: "How Engines Work", branch: "mechanical-curiosities",
@@ -173,14 +177,14 @@ const LIBRARY_NODES = [
     description: "How modern encryption scrambles data so only someone with the right key can read it.",
     dependsOn: ["basic-cryptography-ciphers"] },
 
-  // Games & Systems
-  { id: "chess-fundamentals", name: "Chess Fundamentals", branch: "games-systems",
+  // Games & Probability
+  { id: "chess-fundamentals", name: "Chess Fundamentals", branch: "games-probability",
     description: "Core chess principles: opening theory, tactics, and basic endgame technique.",
     dependsOn: [] },
-  { id: "poker-odds-probability", name: "Poker Odds & Probability", branch: "games-systems",
+  { id: "poker-odds-probability", name: "Poker Odds & Probability", branch: "games-probability",
     description: "Calculating pot odds and hand probabilities to make better decisions at the table.",
     dependsOn: [] },
-  { id: "speedcubing-rubiks-method", name: "Speedcubing (Rubik's Cube Method)", branch: "games-systems",
+  { id: "speedcubing-rubiks-method", name: "Speedcubing (Rubik's Cube Method)", branch: "games-probability",
     description: "A beginner speedcubing method (like CFOP) for solving a Rubik's Cube quickly.",
     dependsOn: [] },
 
@@ -230,24 +234,37 @@ const LIBRARY_NODES = [
 
 // Rough centers of each branch's existing cluster, used as a fallback
 // when a node has no dependencies and no siblings yet placed on the
-// map. The 7 newest branches have no on-map presence yet, so they get
-// dedicated anchor points in the canvas space added below the
-// original layout (see VIEWBOX_DEFAULT in graph.js) rather than
-// falling back to the single generic {600,400} point.
+// map. Library-only branches have no on-map presence until you add
+// something from them, so they get dedicated anchor points in the
+// canvas space below the original 5-branch starter layout (see
+// VIEWBOX_DEFAULT in graph.js) rather than falling back to the single
+// generic {600,400} point — a 4x4 grid for the library-only branches.
 const BRANCH_ANCHORS = {
   coding: { x: 300, y: 150 },
   mentalism: { x: 980, y: 150 },
   people: { x: 750, y: 430 },
   life: { x: 220, y: 550 },
   random: { x: 970, y: 600 },
-  "nature-science": { x: 150, y: 830 },
-  "signals-codes": { x: 450, y: 830 },
-  "history-culture": { x: 750, y: 830 },
-  "body-survival": { x: 1050, y: 830 },
-  "mechanical-curiosities": { x: 250, y: 1050 },
-  "games-systems": { x: 550, y: 1050 },
-  "sensory-craft": { x: 850, y: 1050 },
-  "fitness-movement": { x: 1100, y: 1050 }
+
+  "astronomy-sky": { x: 150, y: 800 },
+  "earth-life-science": { x: 450, y: 800 },
+  "signals-communication": { x: 750, y: 800 },
+  "wilderness-survival": { x: 1050, y: 800 },
+
+  "sleep-nutrition-science": { x: 150, y: 1020 },
+  "games-probability": { x: 450, y: 1020 },
+  "backend-apis": { x: 750, y: 1020 },
+  "advanced-reading": { x: 1050, y: 1020 },
+
+  "magic-memory": { x: 150, y: 1240 },
+  "negotiation-social": { x: 450, y: 1240 },
+  "home-money": { x: 750, y: 1240 },
+  "rest-time": { x: 1050, y: 1240 },
+
+  "history-culture": { x: 150, y: 1460 },
+  "mechanical-curiosities": { x: 450, y: 1460 },
+  "sensory-craft": { x: 750, y: 1460 },
+  "fitness-movement": { x: 1050, y: 1460 }
 };
 
 // Deterministic (not random) offset so a given node always lands in
@@ -306,8 +323,9 @@ function getAddedLibraryNodes(state) {
     });
 }
 
-// The starter tree plus whatever's been added from the library —
-// "everything currently on your map."
+// The starter tree (minus anything removed) plus whatever's been
+// added from the library — "everything currently on your map."
 function buildActiveNodes(state) {
-  return NODES.concat(getAddedLibraryNodes(state));
+  const removed = new Set(state.removedCoreNodeIds || []);
+  return NODES.filter(n => !removed.has(n.id)).concat(getAddedLibraryNodes(state));
 }

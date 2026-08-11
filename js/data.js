@@ -8,14 +8,29 @@ const BRANCHES = {
   people: { label: "People Skills & Persuasion", color: "#c98a8a" },
   life: { label: "Life Skills", color: "#8fae7a" },
   random: { label: "Random Useful Knowledge", color: "#8a9bc2" },
-  "nature-science": { label: "Nature & Science", color: "#6fab8f" },
-  "signals-codes": { label: "Signals & Codes", color: "#7d9fa3" },
   "history-culture": { label: "History & Culture", color: "#ab8868" },
-  "body-survival": { label: "Body & Survival", color: "#a39868" },
-  "mechanical-curiosities": { label: "Mechanical & Practical Curiosities", color: "#8f96a3" },
-  "games-systems": { label: "Games & Systems", color: "#c17f70" },
+  "mechanical-curiosities": { label: "How Things Work", color: "#8f96a3" },
   "sensory-craft": { label: "Sensory & Craft", color: "#b79bc9" },
-  "fitness-movement": { label: "Fitness & Movement", color: "#c96f6f" }
+  "fitness-movement": { label: "Fitness & Movement", color: "#c96f6f" },
+
+  // Split out of the old grab-bag branches (nature-science,
+  // signals-codes, body-survival, games-systems — each used to bundle
+  // several unrelated topics under one vague label) into smaller,
+  // tightly-themed branches. This is purely a library-content
+  // reorganization — no starter node ever referenced those four, so
+  // nothing on the always-on-map tree changes.
+  "backend-apis": { label: "Backend & APIs", color: "#7a93b0" },
+  "advanced-reading": { label: "Advanced Reading Techniques", color: "#9a7aa8" },
+  "magic-memory": { label: "Magic & Memory Feats", color: "#b98fae" },
+  "negotiation-social": { label: "Negotiation & Social Dynamics", color: "#c79a8a" },
+  "home-money": { label: "Home & Money", color: "#93a878" },
+  "rest-time": { label: "Rest & Time", color: "#7ea89a" },
+  "astronomy-sky": { label: "Astronomy & the Sky", color: "#5f7ea3" },
+  "earth-life-science": { label: "Earth & Life Science", color: "#7a9e6f" },
+  "signals-communication": { label: "Signals & Communication", color: "#7d9fa3" },
+  "wilderness-survival": { label: "Wilderness Survival", color: "#a3916a" },
+  "sleep-nutrition-science": { label: "Sleep & Nutrition Science", color: "#8aa39e" },
+  "games-probability": { label: "Games & Probability", color: "#c17f70" }
 };
 
 // NODES is the fixed 25-node starter tree (below) and never changes at
