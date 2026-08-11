@@ -1,11 +1,13 @@
 // ---- Daily reminder sender ----
-// Run on a schedule by .github/workflows/daily-nudge.yml (hourly, so
-// each profile's own chosen local hour gets checked regardless of
-// timezone). For every profile with a live push subscription whose
-// local time matches their chosen hour and who hasn't been nudged
-// today, pick their most-neglected in-progress node and send one
-// push about it. Profiles with nothing in progress are skipped
-// entirely that day — no manufactured "come back!" guilt message.
+// Run hourly by .github/workflows/daily-nudge.yml (so it can catch
+// 10am local time regardless of which timezone a profile is in). For
+// every profile with a live push subscription whose local hour is
+// currently 10am and who hasn't been nudged today, pick their
+// most-neglected in-progress node and send one push about it.
+// Profiles with nothing in progress are skipped entirely that day —
+// no manufactured "come back!" guilt message. The target hour is
+// fixed for everyone (no per-user time picker — just an on/off
+// toggle in Settings), which is what keeps this simple.
 //
 // Not part of the served site — only ever run by CI, with the VAPID
 // private key coming from a GitHub Actions secret, never committed.
@@ -82,17 +84,13 @@ async function saveProfileData(name, data) {
 function localTimeFor(offsetMinutes, nowMs) {
   const localMs = nowMs - offsetMinutes * 60000;
   const d = new Date(localMs);
-  const totalMinutes = d.getUTCHours() * 60 + d.getUTCMinutes();
+  const hour = d.getUTCHours();
   const dateKey = d.toISOString().slice(0, 10);
-  return { totalMinutes, dateKey };
+  return { hour, dateKey };
 }
 
-// The workflow runs every 15 minutes (see daily-nudge.yml) — this is
-// deliberately a bit wider than that interval, as a buffer against a
-// run being delayed or skipped outright (which does happen with
-// GitHub's scheduled workflows), without risking a double-send since
-// lastNudgeSentDate still caps it to once per day either way.
-const CATCH_WINDOW_MINUTES = 20;
+// Fixed for every profile — no per-user time picker, just on/off.
+const TARGET_HOUR = 10;
 
 function pickNeglectedNode(data, allNodes) {
   let best = null;
@@ -116,16 +114,8 @@ async function main() {
   for (const { name, data } of profiles) {
     if (!data || !data.pushSubscription || typeof data.reminderTimezoneOffsetMinutes !== "number") continue;
 
-    const { totalMinutes, dateKey } = localTimeFor(data.reminderTimezoneOffsetMinutes, nowMs);
-    const reminderHour = typeof data.reminderHour === "number" ? data.reminderHour : 9;
-    const reminderMinute = typeof data.reminderMinute === "number" ? data.reminderMinute : 0;
-    const targetMinutes = reminderHour * 60 + reminderMinute;
-
-    // Minutes since the target time today, wrapping across midnight —
-    // "just passed, within the catch window" rather than an exact
-    // match, since this only runs every 15 minutes, not every minute.
-    const sinceTarget = ((totalMinutes - targetMinutes) % 1440 + 1440) % 1440;
-    if (sinceTarget >= CATCH_WINDOW_MINUTES) continue;
+    const { hour, dateKey } = localTimeFor(data.reminderTimezoneOffsetMinutes, nowMs);
+    if (hour !== TARGET_HOUR) continue;
     if (data.lastNudgeSentDate === dateKey) continue;
 
     const picked = pickNeglectedNode(data, allNodes);

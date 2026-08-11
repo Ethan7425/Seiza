@@ -25,12 +25,7 @@
 
       <div class="settings-section">
         <h3>Daily reminders</h3>
-        <p>A quiet daily nudge about whatever you've got in progress — no streaks, and it stays silent on days nothing's mid-way. On iPhone, this only works if Seiza is added to your Home Screen and opened from that icon, not from Safari directly.</p>
-        <div class="settings-row">
-          <label for="reminder-time-input" class="settings-inline-label">Around</label>
-          <input type="time" id="reminder-time-input" value="09:00">
-        </div>
-        <p class="settings-hint">Checked every 15 minutes, so it'll land within about that window of your chosen time, not to the exact minute.</p>
+        <p>A quiet daily nudge about whatever you've got in progress, once a day around 10am your time — no streaks, and it stays silent on days nothing's mid-way. On iPhone, this only works if Seiza is added to your Home Screen and opened from that icon, not from Safari directly.</p>
         <div class="settings-row">
           <button id="reminder-toggle-btn">Enable reminders</button>
           <button id="test-notification-btn">Send test notification</button>
@@ -118,12 +113,7 @@
   <script src="../js/push.js"></script>
   <script>
     let state;
-    const timeInput = document.getElementById("reminder-time-input");
     const reminderBtn = document.getElementById("reminder-toggle-btn");
-
-    function pad2(n) {
-      return String(n).padStart(2, "0");
-    }
 
     (async () => {
       state = await loadState();
@@ -132,18 +122,11 @@
         return;
       }
       document.getElementById("current-profile-name").textContent = state.profileName;
-      timeInput.value = `${pad2(state.reminderHour)}:${pad2(state.reminderMinute)}`;
       updateReminderButton();
     })();
 
     function updateReminderButton() {
       reminderBtn.textContent = state.pushSubscription ? "Disable reminders" : "Enable reminders";
-    }
-
-    function applyTimeInput() {
-      const [h, m] = timeInput.value.split(":").map(Number);
-      state.reminderHour = h;
-      state.reminderMinute = m;
     }
 
     reminderBtn.addEventListener("click", async () => {
@@ -155,7 +138,6 @@
         } else {
           const subscription = await subscribeToPush();
           state.pushSubscription = subscription;
-          applyTimeInput();
           state.reminderTimezoneOffsetMinutes = new Date().getTimezoneOffset();
         }
         saveState(state);
@@ -164,14 +146,6 @@
         alert(e.message);
       }
       reminderBtn.disabled = false;
-    });
-
-    timeInput.addEventListener("change", () => {
-      applyTimeInput();
-      if (state.pushSubscription) {
-        state.reminderTimezoneOffsetMinutes = new Date().getTimezoneOffset();
-      }
-      saveState(state);
     });
 
     document.getElementById("test-notification-btn").addEventListener("click", async () => {

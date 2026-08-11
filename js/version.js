@@ -6,13 +6,22 @@
 // Semantic-ish versioning: patch (x.y.Z) for small fixes/tweaks,
 // minor (x.Y.0) for real feature additions, major (X.0.0) reserved
 // for genuinely big overhauls.
-const APP_VERSION = "1.0.6";
+const APP_VERSION = "1.1.0";
 
 // One short line per change, newest entry first — shown in Settings
 // so it's easy to see what actually changed without digging through
 // git. Starts fresh from the switch to semver rather than backfilling
 // every earlier "vN" build.
 const CHANGELOG = [
+  {
+    version: "1.1.0",
+    date: "2026-08-11",
+    notes: [
+      "Node notes replaced with a one-tap \"Open in Obsidian\" link — write notes there instead of in-app",
+      "Daily reminders simplified: just on/off now, always around 10am your time (no more time picker)",
+      "Reminder checks back to hourly, matching the simpler fixed-time design"
+    ]
+  },
   {
     version: "1.0.6",
     date: "2026-08-10",

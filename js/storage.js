@@ -30,7 +30,11 @@ function clearProfileKey() {
 // - addedLibraryIds/nodePositions didn't exist before the library page
 // - quantity (a free-text subtitle like "200 kanji known") didn't
 //   exist before the profile/quantity update
-// - pushSubscription/reminderHour/etc didn't exist before daily nudges
+// - pushSubscription/etc didn't exist before daily nudges. The target
+//   hour used to be user-configurable (reminderHour/reminderMinute)
+//   but is now a fixed 10am-local constant in send-nudges.mjs, so
+//   those two fields are no longer part of the shape — old profiles
+//   that still have them just carry harmless unused data.
 function migrateState(state) {
   Object.keys(state.progress).forEach(id => {
     const entry = state.progress[id];
@@ -48,12 +52,6 @@ function migrateState(state) {
   }
   if (typeof state.pushSubscription === "undefined") {
     state.pushSubscription = null;
-  }
-  if (typeof state.reminderHour !== "number") {
-    state.reminderHour = 9;
-  }
-  if (typeof state.reminderMinute !== "number") {
-    state.reminderMinute = 0;
   }
   if (typeof state.reminderTimezoneOffsetMinutes !== "number") {
     state.reminderTimezoneOffsetMinutes = null;
@@ -74,7 +72,7 @@ function createBlankState(profileName) {
   });
   return {
     profileName, progress, addedLibraryIds: [], nodePositions: {},
-    pushSubscription: null, reminderHour: 9, reminderMinute: 0, reminderTimezoneOffsetMinutes: null, lastNudgeSentDate: null
+    pushSubscription: null, reminderTimezoneOffsetMinutes: null, lastNudgeSentDate: null
   };
 }
 
