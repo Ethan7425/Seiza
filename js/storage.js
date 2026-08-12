@@ -35,8 +35,15 @@ function clearProfileKey() {
 //   but is now a fixed 10am-local constant in send-nudges.mjs, so
 //   those two fields are no longer part of the shape — old profiles
 //   that still have them just carry harmless unused data.
-// - removedCoreNodeIds didn't exist before starter nodes were
-//   removable too, not just library-added ones
+// - addedCoreNodeIds didn't exist before the starter tree switched
+//   from "always on your map" to the same opt-in model library nodes
+//   already used. Every profile before this point effectively had all
+//   25 starter nodes active unconditionally (unless individually
+//   removed, tracked by the now-retired removedCoreNodeIds) — this
+//   preserves that as an explicit list so nobody's existing map
+//   changes. Brand-new profiles start with this empty instead (see
+//   createBlankState) — an empty map with just the branch nebulas
+//   visible until you add something.
 function migrateState(state) {
   Object.keys(state.progress).forEach(id => {
     const entry = state.progress[id];
@@ -49,8 +56,9 @@ function migrateState(state) {
   if (!Array.isArray(state.addedLibraryIds)) {
     state.addedLibraryIds = [];
   }
-  if (!Array.isArray(state.removedCoreNodeIds)) {
-    state.removedCoreNodeIds = [];
+  if (!Array.isArray(state.addedCoreNodeIds)) {
+    const previouslyRemoved = new Set(state.removedCoreNodeIds || []);
+    state.addedCoreNodeIds = NODES.map(n => n.id).filter(id => !previouslyRemoved.has(id));
   }
   if (!state.nodePositions || typeof state.nodePositions !== "object") {
     state.nodePositions = {};
@@ -67,16 +75,13 @@ function migrateState(state) {
   return state;
 }
 
-// A brand-new profile's starting state: every node locked, nothing
-// pre-filled. See progress.js for how "locked" vs "unlockable" gets
-// recomputed live from dependencies as nodes are mastered.
+// A brand-new profile's starting state: nothing added yet, nothing
+// pre-filled — just the bare nebulas until you add something from the
+// Library. See progress.js for how "locked" vs "unlockable" gets
+// recomputed live from dependencies once a node actually is added.
 function createBlankState(profileName) {
-  const progress = {};
-  NODES.forEach(node => {
-    progress[node.id] = { stage: "locked", notes: "", proof: [], updatedAt: null, quantity: "" };
-  });
   return {
-    profileName, progress, addedLibraryIds: [], removedCoreNodeIds: [], nodePositions: {},
+    profileName, progress: {}, addedLibraryIds: [], addedCoreNodeIds: [], nodePositions: {},
     pushSubscription: null, reminderTimezoneOffsetMinutes: null, lastNudgeSentDate: null
   };
 }

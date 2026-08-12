@@ -58,6 +58,8 @@
   <script>
     let state;
 
+    const ALL_CATALOG_NODES = NODES.concat(LIBRARY_NODES);
+
     (async () => {
       state = await loadState();
       if (!state) {
@@ -65,28 +67,37 @@
         return;
       }
       initLibraryPage(document.getElementById("library-content"), {
-        onAdd: handleAddLibraryNode,
+        onAdd: handleAddNode,
         onAddBranch: handleAddBranch,
-        isAdded: id => state.addedLibraryIds.includes(id)
+        onRemove: handleRemoveNode,
+        onRemoveBranch: handleRemoveBranch,
+        isAdded: id => state.addedLibraryIds.includes(id) || state.addedCoreNodeIds.includes(id)
       });
     })();
 
-    // Places one node, given the map's current state — shared by the
-    // single-node and whole-branch add paths so the placement logic
-    // (and the bookkeeping around it) only exists once.
-    function addLibraryNodeToState(template) {
-      const pos = placeNode(template, buildActiveNodes(state));
-      state.addedLibraryIds.push(template.id);
-      state.nodePositions[template.id] = pos;
+    function isAdded(id) {
+      return state.addedLibraryIds.includes(id) || state.addedCoreNodeIds.includes(id);
+    }
+
+    // Marks one node as added and gives it a fresh progress entry —
+    // positions aren't touched here at all, since buildActiveNodes now
+    // computes the whole branch's layout fresh every time it's called,
+    // so there's nothing to precompute or store.
+    function markAdded(template) {
+      if (NODES.some(n => n.id === template.id)) {
+        state.addedCoreNodeIds.push(template.id);
+      } else {
+        state.addedLibraryIds.push(template.id);
+      }
       state.progress[template.id] = { stage: "locked", notes: "", proof: [], updatedAt: null, quantity: "" };
     }
 
-    function handleAddLibraryNode(nodeId) {
-      if (state.addedLibraryIds.includes(nodeId)) return;
-      const template = LIBRARY_NODES.find(n => n.id === nodeId);
+    function handleAddNode(nodeId) {
+      if (isAdded(nodeId)) return;
+      const template = ALL_CATALOG_NODES.find(n => n.id === nodeId);
       if (!template) return;
 
-      addLibraryNodeToState(template);
+      markAdded(template);
       saveState(state);
       refreshLibraryResults();
     }
@@ -95,14 +106,67 @@
     // a sibling within the same branch (e.g. Basic Astronomy needing
     // Constellations & Star Navigation) is guaranteed to actually be
     // reachable, instead of silently staying locked on a dependency
-    // that was never added. Nodes are added in the branch's own
-    // definition order, so within-branch dependencies are already
-    // present by the time a later node's placement looks for them.
+    // that was never added.
     function handleAddBranch(branchId) {
-      const toAdd = LIBRARY_NODES.filter(n => n.branch === branchId && !state.addedLibraryIds.includes(n.id));
+      const toAdd = ALL_CATALOG_NODES.filter(n => n.branch === branchId && !isAdded(n.id));
       if (!toAdd.length) return;
 
-      toAdd.forEach(addLibraryNodeToState);
+      toAdd.forEach(markAdded);
+      saveState(state);
+      refreshLibraryResults();
+    }
+
+    // A node with something still depending on it can't be removed —
+    // same rule the map's own "Remove from map" button enforces —
+    // otherwise the dependent would end up permanently stuck locked on
+    // something that no longer exists at all.
+    function findBlockingDependents(nodeIds) {
+      const removing = new Set(nodeIds);
+      return buildActiveNodes(state).filter(n =>
+        !removing.has(n.id) && n.dependsOn.some(depId => removing.has(depId))
+      );
+    }
+
+    function forgetNode(nodeId) {
+      delete state.progress[nodeId];
+      delete state.nodePositions[nodeId];
+      state.addedLibraryIds = state.addedLibraryIds.filter(id => id !== nodeId);
+      state.addedCoreNodeIds = state.addedCoreNodeIds.filter(id => id !== nodeId);
+    }
+
+    function handleRemoveNode(nodeId) {
+      if (!isAdded(nodeId)) return;
+      const template = ALL_CATALOG_NODES.find(n => n.id === nodeId);
+      if (!template) return;
+
+      const blockers = findBlockingDependents([nodeId]);
+      if (blockers.length) {
+        alert(`Can't remove "${template.name}" — ${blockers.map(b => b.name).join(", ")} still depend${blockers.length === 1 ? "s" : ""} on it.`);
+        return;
+      }
+
+      const confirmed = confirm(`Remove "${template.name}" from your map? This deletes its progress, notes, and evidence log. This can't be undone.`);
+      if (!confirmed) return;
+
+      forgetNode(nodeId);
+      saveState(state);
+      refreshLibraryResults();
+    }
+
+    function handleRemoveBranch(branchId) {
+      const added = ALL_CATALOG_NODES.filter(n => n.branch === branchId && isAdded(n.id));
+      if (!added.length) return;
+
+      const blockers = findBlockingDependents(added.map(n => n.id));
+      if (blockers.length) {
+        alert(`Can't remove the whole branch — ${blockers.map(b => b.name).join(", ")} (outside this branch) still depend${blockers.length === 1 ? "s" : ""} on something in it.`);
+        return;
+      }
+
+      const confirmed = confirm(`Remove all ${added.length} added node${added.length === 1 ? "" : "s"} in "${BRANCHES[branchId].label}"? This deletes their progress, notes, and evidence logs. This can't be undone.`);
+      if (!confirmed) return;
+
+      added.forEach(n => forgetNode(n.id));
       saveState(state);
       refreshLibraryResults();
     }

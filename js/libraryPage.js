@@ -1,12 +1,19 @@
-// ---- Library page: browse and add skills that aren't on your map yet ----
+// ---- Library page: browse, add, and remove skills ----
 // Default view is a grid of branch cards (click one to preview what's
 // inside); typing in the search box switches to a flat, cross-branch
 // list of matching nodes instead, same as before search existed.
+// Covers both catalogs (the starter tree and the wider library) since
+// they're both opt-in the same way now — nothing about browsing here
+// distinguishes where a node's definition actually lives.
+
+const CATALOG_NODES = NODES.concat(LIBRARY_NODES);
 
 let libraryContainer;
 let libraryResultsEl;
 let onAddNode = () => {};
 let onAddBranch = () => {};
+let onRemoveNode = () => {};
+let onRemoveBranch = () => {};
 let isNodeAdded = () => false;
 let librarySearchTerm = "";
 let selectedBranchId = null;
@@ -15,13 +22,15 @@ function initLibraryPage(container, handlers) {
   libraryContainer = container;
   onAddNode = handlers.onAdd;
   onAddBranch = handlers.onAddBranch;
+  onRemoveNode = handlers.onRemove;
+  onRemoveBranch = handlers.onRemoveBranch;
   isNodeAdded = handlers.isAdded;
   librarySearchTerm = "";
   selectedBranchId = null;
 
   libraryContainer.innerHTML = `
     <h2>Skill Library</h2>
-    <p class="library-intro">Skills you haven't added to your map yet, organized by branch. Tap a branch to see what's inside, or search across all of them.</p>
+    <p class="library-intro">Browse by branch, add what you want to track — or remove it again later if your map gets cluttered.</p>
     <input type="text" id="library-search-input" class="library-search-input" placeholder="Search skills...">
     <div id="library-results" class="library-groups"></div>
   `;
@@ -44,9 +53,9 @@ function branchNodeItemsHtml(items) {
             <p class="library-item-name">${n.name}</p>
             <p class="library-item-desc">${n.description}</p>
           </div>
-          <button class="library-add-btn" data-id="${n.id}" ${isNodeAdded(n.id) ? "disabled" : ""}>
-            ${isNodeAdded(n.id) ? "Added" : "Add"}
-          </button>
+          ${isNodeAdded(n.id)
+            ? `<button class="library-remove-btn" data-id="${n.id}">Remove</button>`
+            : `<button class="library-add-btn" data-id="${n.id}">Add</button>`}
         </li>
       `).join("")}
     </ul>
@@ -71,7 +80,7 @@ function renderLibraryResults() {
 function renderSearchResults(term) {
   const groups = Object.keys(BRANCHES).map(branchId => ({
     branchId,
-    items: LIBRARY_NODES.filter(n => n.branch === branchId && (
+    items: CATALOG_NODES.filter(n => n.branch === branchId && (
       n.name.toLowerCase().includes(term) || n.description.toLowerCase().includes(term)
     ))
   })).filter(g => g.items.length > 0);
@@ -86,12 +95,12 @@ function renderSearchResults(term) {
     </div>
   `).join("") : `<p class="library-empty">No skills match "${librarySearchTerm}".</p>`;
 
-  wireAddButtons();
+  wireItemButtons();
 }
 
 function renderBranchGrid() {
   const cards = Object.keys(BRANCHES)
-    .map(branchId => ({ branchId, items: LIBRARY_NODES.filter(n => n.branch === branchId) }))
+    .map(branchId => ({ branchId, items: CATALOG_NODES.filter(n => n.branch === branchId) }))
     .filter(g => g.items.length > 0);
 
   libraryResultsEl.innerHTML = `
@@ -120,8 +129,9 @@ function renderBranchGrid() {
 
 function renderBranchPreview(branchId) {
   const branch = BRANCHES[branchId];
-  const items = LIBRARY_NODES.filter(n => n.branch === branchId);
+  const items = CATALOG_NODES.filter(n => n.branch === branchId);
   const remaining = items.filter(n => !isNodeAdded(n.id));
+  const added = items.filter(n => isNodeAdded(n.id));
 
   libraryResultsEl.innerHTML = `
     <button type="button" class="library-branch-back">&larr; All branches</button>
@@ -131,9 +141,10 @@ function renderBranchPreview(branchId) {
           <span class="branch-dot" style="background:${branch.color}"></span>
           ${branch.label}
         </h3>
-        <button type="button" class="library-add-branch-btn" ${remaining.length ? "" : "disabled"}>
-          ${remaining.length ? `Add all (${remaining.length})` : "All added"}
-        </button>
+        <div class="library-branch-bulk-actions">
+          ${remaining.length ? `<button type="button" class="library-add-branch-btn">Add all (${remaining.length})</button>` : ""}
+          ${added.length ? `<button type="button" class="library-remove-branch-btn">Remove all (${added.length})</button>` : ""}
+        </div>
       </div>
       ${items.some(n => n.dependsOn.some(id => items.some(i => i.id === id))) ? `
         <p class="library-branch-note">Some of these depend on each other — adding the whole branch at once avoids one getting stuck waiting on a sibling you never added.</p>
@@ -147,22 +158,27 @@ function renderBranchPreview(branchId) {
     renderLibraryResults();
   });
 
-  if (remaining.length) {
-    libraryResultsEl.querySelector(".library-add-branch-btn").addEventListener("click", () => onAddBranch(branchId));
-  }
+  const addBranchBtn = libraryResultsEl.querySelector(".library-add-branch-btn");
+  if (addBranchBtn) addBranchBtn.addEventListener("click", () => onAddBranch(branchId));
 
-  wireAddButtons();
+  const removeBranchBtn = libraryResultsEl.querySelector(".library-remove-branch-btn");
+  if (removeBranchBtn) removeBranchBtn.addEventListener("click", () => onRemoveBranch(branchId));
+
+  wireItemButtons();
 }
 
-function wireAddButtons() {
+function wireItemButtons() {
   libraryResultsEl.querySelectorAll(".library-add-btn").forEach(btn => {
     btn.addEventListener("click", () => onAddNode(btn.dataset.id));
   });
+  libraryResultsEl.querySelectorAll(".library-remove-btn").forEach(btn => {
+    btn.addEventListener("click", () => onRemoveNode(btn.dataset.id));
+  });
 }
 
-// Called after a node is added so button states ("Add" -> "Added")
-// refresh without losing whatever the user typed in the search box or
-// which branch they had open.
+// Called after a node is added/removed so button states refresh
+// without losing whatever the user typed in the search box or which
+// branch they had open.
 function refreshLibraryResults() {
   if (libraryResultsEl) renderLibraryResults();
 }

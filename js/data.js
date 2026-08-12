@@ -33,17 +33,23 @@ const BRANCHES = {
   "games-probability": { label: "Games & Probability", color: "#c17f70" }
 };
 
-// NODES is the fixed 25-node starter tree (below) and never changes at
-// runtime. ACTIVE_NODES is what's actually on your map right now — the
-// starter tree plus whatever you've pulled in from the library. app.js
-// builds it once at startup (NODES + your added library nodes) and
-// pushes onto it whenever you add another. Everything that renders or
-// reasons about "the graph" reads from ACTIVE_NODES, not NODES.
+// NODES is the fixed catalog of "starter" node definitions (below)
+// and never changes at runtime — same role LIBRARY_NODES plays for
+// the rest of the catalog, just a different array. Neither is
+// pre-populated on your map anymore: a brand-new profile starts
+// completely empty, and ACTIVE_NODES (what's actually on your map
+// right now) only ever contains nodes you've explicitly added via the
+// Library, whichever catalog they came from. See buildActiveNodes in
+// library.js. Everything that renders or reasons about "the graph"
+// reads from ACTIVE_NODES, not NODES directly.
 let ACTIVE_NODES = [];
 
-// ---- Seed nodes ----
-// Every new profile starts with every node locked — see progress.js
-// for how "locked"/"unlockable" are recomputed live from dependencies.
+// ---- Starter node catalog ----
+// These get a small head start in the Library (they used to be
+// pre-added automatically), but otherwise work exactly like any
+// LIBRARY_NODES entry — locked until added, and until every
+// dependency is mastered. See progress.js for how "locked" vs
+// "unlockable" is recomputed live from dependencies.
 
 const NODES = [
   // Coding & Web Dev

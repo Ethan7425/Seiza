@@ -1,7 +1,7 @@
 // ---- SVG rendering: background stars, connections, nodes, zoom/pan ----
 
 const SVG_NS = "http://www.w3.org/2000/svg";
-const VIEWBOX_DEFAULT = { x: 0, y: 0, w: 1200, h: 1650 };
+const VIEWBOX_DEFAULT = { x: 0, y: 0, w: 4700, h: 3050 };
 
 let viewBox = { ...VIEWBOX_DEFAULT };
 let svg, nebulaLayer, starLayer, lineLayer, nodeLayer;

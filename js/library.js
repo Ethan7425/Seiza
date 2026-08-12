@@ -1,17 +1,18 @@
 // ---- Skill library ----
-// Extra skills that are NOT on your map by default. Browse them on the
-// Library page and add the ones you want to track. This list is meant
-// to grow a lot over time — that's the whole point of keeping it
-// separate from the core 25-node starter tree in data.js.
+// Extra skills that aren't on your map by default. Browse them on the
+// Library page and add the ones you want to track — same opt-in model
+// the starter tree in data.js now uses too (see buildActiveNodes
+// below), so there's no real distinction anymore between "starter"
+// and "library" except which array a node's definition lives in.
 //
-// A library entry has no x/y (see placeNode below) and no starting
-// stage — it always starts fresh once added. `dependsOn` usually
-// references an id already on the map (from NODES), but it's fine for
-// one library entry to depend on another library entry too — until
-// both are added, effectiveStage just treats the missing dependency as
-// "not mastered" (so the dependent node stays locked) and the
-// connection line simply doesn't render yet. No crash, just a chain
-// that only lights up once you've added every link in it.
+// A library entry has no x/y of its own — see layoutBranchNodes below
+// for how a real position gets computed once it's added. `dependsOn`
+// usually references another id in the same branch, but it's fine to
+// depend on something in a different branch (or something not added
+// yet at all) — until it's added and mastered, effectiveStage just
+// treats it as "not mastered" (so the dependent node stays locked) and
+// the connection line simply doesn't render yet. No crash, just a
+// chain that only lights up once every link in it exists.
 
 const LIBRARY_NODES = [
   { id: "typescript", name: "TypeScript", branch: "backend-apis",
@@ -232,100 +233,145 @@ const LIBRARY_NODES = [
     dependsOn: ["plank-hold"], quantityLabel: "seconds" }
 ];
 
-// Rough centers of each branch's existing cluster, used as a fallback
-// when a node has no dependencies and no siblings yet placed on the
-// map. Library-only branches have no on-map presence until you add
-// something from them, so they get dedicated anchor points in the
-// canvas space below the original 5-branch starter layout (see
-// VIEWBOX_DEFAULT in graph.js) rather than falling back to the single
-// generic {600,400} point — a 4x4 grid for the library-only branches.
+// Top-left corner each branch's tree grows down-and-out from. Every
+// branch — including the 5 that used to be a fixed, hand-placed
+// starter tree — is laid out algorithmically now (see
+// layoutBranchNodes below), so this is just a big, evenly-spaced grid
+// with enough room per cell that even a 4-deep dependency chain can't
+// bleed into its neighbor. See VIEWBOX_DEFAULT in graph.js, which is
+// sized to match.
 const BRANCH_ANCHORS = {
-  coding: { x: 300, y: 150 },
-  mentalism: { x: 980, y: 150 },
-  people: { x: 750, y: 430 },
-  life: { x: 220, y: 550 },
-  random: { x: 970, y: 600 },
+  coding: { x: 350, y: 350 },
+  mentalism: { x: 1350, y: 350 },
+  people: { x: 2350, y: 350 },
+  life: { x: 3350, y: 350 },
+  random: { x: 4350, y: 350 },
 
-  "astronomy-sky": { x: 150, y: 800 },
-  "earth-life-science": { x: 450, y: 800 },
-  "signals-communication": { x: 750, y: 800 },
-  "wilderness-survival": { x: 1050, y: 800 },
+  "backend-apis": { x: 350, y: 950 },
+  "advanced-reading": { x: 1350, y: 950 },
+  "magic-memory": { x: 2350, y: 950 },
+  "negotiation-social": { x: 3350, y: 950 },
 
-  "sleep-nutrition-science": { x: 150, y: 1020 },
-  "games-probability": { x: 450, y: 1020 },
-  "backend-apis": { x: 750, y: 1020 },
-  "advanced-reading": { x: 1050, y: 1020 },
+  "home-money": { x: 350, y: 1550 },
+  "rest-time": { x: 1350, y: 1550 },
+  "astronomy-sky": { x: 2350, y: 1550 },
+  "earth-life-science": { x: 3350, y: 1550 },
 
-  "magic-memory": { x: 150, y: 1240 },
-  "negotiation-social": { x: 450, y: 1240 },
-  "home-money": { x: 750, y: 1240 },
-  "rest-time": { x: 1050, y: 1240 },
+  "signals-communication": { x: 350, y: 2150 },
+  "wilderness-survival": { x: 1350, y: 2150 },
+  "sleep-nutrition-science": { x: 2350, y: 2150 },
+  "games-probability": { x: 3350, y: 2150 },
 
-  "history-culture": { x: 150, y: 1460 },
-  "mechanical-curiosities": { x: 450, y: 1460 },
-  "sensory-craft": { x: 750, y: 1460 },
-  "fitness-movement": { x: 1050, y: 1460 }
+  "history-culture": { x: 350, y: 2750 },
+  "mechanical-curiosities": { x: 1350, y: 2750 },
+  "sensory-craft": { x: 2350, y: 2750 },
+  "fitness-movement": { x: 3350, y: 2750 }
 };
 
-// Deterministic (not random) offset so a given node always lands in
-// the same spot relative to its base point.
-function hashJitter(id, range) {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = (hash * 31 + id.charCodeAt(i)) % 10000;
-  }
-  const angle = (hash % 360) * (Math.PI / 180);
-  const dist = range * 0.5 + ((hash % 100) / 100) * range * 0.5;
-  return { dx: Math.cos(angle) * dist, dy: Math.sin(angle) * dist };
-}
+// ---- Tidy tree layout ----
+// A real parent-centered tree layout (the classic "tidy tree" shape),
+// not a rigid grid: each node sits centered directly above its own
+// children, so the branch actually reads as a tree — a single chain
+// of dependencies draws as a straight line, a node with several
+// dependents visibly fans out under it. Independent root nodes (no
+// in-branch dependency) sit side by side at the top, each with its
+// own subtree given exactly as much width as it needs — no more, no
+// less — so nothing overlaps regardless of shape.
+//
+// A node that depends on more than one thing already on the map still
+// only picks one "primary" parent (its first in-branch dependency) to
+// hang from for placement purposes — the connection lines drawn in
+// graph.js still connect it to every real dependency, this only
+// affects where it sits.
+const LAYOUT_COLUMN_WIDTH = 130;
+const LAYOUT_ROW_HEIGHT = 120;
 
-// Where a newly-added node should land: near the average position of
-// its dependencies, or near its branch's existing nodes, or a fallback
-// anchor if it'd be the first node in that branch.
-function placeNode(node, activeNodes) {
-  let base;
+function layoutBranchNodes(branchNodes, anchor) {
+  const idSet = new Set(branchNodes.map(n => n.id));
+  const childrenOf = {};
+  const roots = [];
 
-  if (node.dependsOn.length) {
-    const deps = node.dependsOn.map(id => activeNodes.find(n => n.id === id)).filter(Boolean);
-    if (deps.length) {
-      base = {
-        x: deps.reduce((sum, d) => sum + d.x, 0) / deps.length,
-        y: deps.reduce((sum, d) => sum + d.y, 0) / deps.length
-      };
+  branchNodes.forEach(node => {
+    const primaryParent = node.dependsOn.find(id => idSet.has(id));
+    if (primaryParent) {
+      (childrenOf[primaryParent] = childrenOf[primaryParent] || []).push(node.id);
+    } else {
+      roots.push(node.id);
     }
+  });
+
+  // How many leaf-width "slots" a node's whole subtree needs —
+  // exactly 1 for a leaf, or the sum of its children's slot counts
+  // for anything with dependents.
+  const widthCache = {};
+  function subtreeWidth(id) {
+    if (id in widthCache) return widthCache[id];
+    widthCache[id] = 1; // breaks any accidental dependency cycle
+    const kids = childrenOf[id] || [];
+    widthCache[id] = kids.length ? kids.reduce((sum, k) => sum + subtreeWidth(k), 0) : 1;
+    return widthCache[id];
   }
+  roots.forEach(subtreeWidth);
 
-  if (!base) {
-    const sameBranch = activeNodes.filter(n => n.branch === node.branch);
-    base = sameBranch.length
-      ? {
-          x: sameBranch.reduce((sum, n) => sum + n.x, 0) / sameBranch.length,
-          y: sameBranch.reduce((sum, n) => sum + n.y, 0) / sameBranch.length
-        }
-      : (BRANCH_ANCHORS[node.branch] || { x: 600, y: 400 });
-  }
-
-  const { dx, dy } = hashJitter(node.id, 90);
-  return { x: Math.round(base.x + dx), y: Math.round(base.y + dy) };
-}
-
-// Turns a saved state's addedLibraryIds + nodePositions back into full
-// node objects. Shared by the map page (to render them) and the
-// library page (to place the next one relative to them) so neither
-// has to duplicate this lookup.
-function getAddedLibraryNodes(state) {
-  return state.addedLibraryIds
-    .map(id => LIBRARY_NODES.find(n => n.id === id))
-    .filter(Boolean)
-    .map(template => {
-      const pos = state.nodePositions[template.id] || placeNode(template, NODES);
-      return { ...template, x: pos.x, y: pos.y };
+  const slot = {}; // each node's horizontal center, in slot units
+  const depth = {};
+  function place(id, nodeDepth, leftSlot) {
+    depth[id] = nodeDepth;
+    const kids = childrenOf[id] || [];
+    slot[id] = leftSlot + subtreeWidth(id) / 2;
+    let cursor = leftSlot;
+    kids.forEach(kidId => {
+      place(kidId, nodeDepth + 1, cursor);
+      cursor += subtreeWidth(kidId);
     });
+  }
+
+  let cursor = 0;
+  roots.forEach(id => {
+    place(id, 0, cursor);
+    cursor += subtreeWidth(id);
+  });
+  const totalWidth = cursor;
+
+  const positions = {};
+  Object.keys(slot).forEach(id => {
+    positions[id] = {
+      x: Math.round(anchor.x - ((totalWidth - 1) * LAYOUT_COLUMN_WIDTH) / 2 + slot[id] * LAYOUT_COLUMN_WIDTH),
+      y: Math.round(anchor.y + depth[id] * LAYOUT_ROW_HEIGHT)
+    };
+  });
+
+  return positions;
 }
 
-// The starter tree (minus anything removed) plus whatever's been
-// added from the library — "everything currently on your map."
+// Everything currently on your map — starter nodes and library nodes
+// you've explicitly added, nothing pre-populated. A brand-new profile
+// starts with both id lists empty, so the map is just the bare
+// nebulas until you add something from the Library.
+//
+// Positions are recomputed with layoutBranchNodes every single time
+// this runs, grouped fresh by branch — never read from storage. That
+// means there's no such thing as a stale saved position left over
+// from an older layout pass (e.g. from before this algorithm
+// existed): the map self-heals to a clean layout on every load,
+// purely as a function of which nodes are currently active, not the
+// order or history of how they got added.
 function buildActiveNodes(state) {
-  const removed = new Set(state.removedCoreNodeIds || []);
-  return NODES.filter(n => !removed.has(n.id)).concat(getAddedLibraryNodes(state));
+  const addedIds = new Set(state.addedCoreNodeIds.concat(state.addedLibraryIds));
+  const active = NODES.concat(LIBRARY_NODES).filter(n => addedIds.has(n.id));
+
+  const byBranch = {};
+  active.forEach(n => { (byBranch[n.branch] = byBranch[n.branch] || []).push(n); });
+
+  const result = [];
+  Object.keys(byBranch).forEach(branchId => {
+    const anchor = BRANCH_ANCHORS[branchId] || { x: 600, y: 400 };
+    const positions = layoutBranchNodes(byBranch[branchId], anchor);
+    byBranch[branchId].forEach(n => {
+      const pos = positions[n.id];
+      result.push({ ...n, x: pos.x, y: pos.y });
+    });
+  });
+
+  return result;
 }
