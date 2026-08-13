@@ -71,7 +71,8 @@
         onAddBranch: handleAddBranch,
         onRemove: handleRemoveNode,
         onRemoveBranch: handleRemoveBranch,
-        isAdded: id => state.addedLibraryIds.includes(id) || state.addedCoreNodeIds.includes(id)
+        isAdded: id => state.addedLibraryIds.includes(id) || state.addedCoreNodeIds.includes(id),
+        initialBranch: new URLSearchParams(location.search).get("branch")
       });
     })();
 

@@ -26,7 +26,9 @@ function initLibraryPage(container, handlers) {
   onRemoveBranch = handlers.onRemoveBranch;
   isNodeAdded = handlers.isAdded;
   librarySearchTerm = "";
-  selectedBranchId = null;
+  // Lets a nebula on the map (or any other link) jump straight to its
+  // branch's preview instead of always landing on the top-level grid.
+  selectedBranchId = handlers.initialBranch && BRANCHES[handlers.initialBranch] ? handlers.initialBranch : null;
 
   libraryContainer.innerHTML = `
     <h2>Skill Library</h2>
@@ -99,20 +101,24 @@ function renderSearchResults(term) {
 }
 
 function renderBranchGrid() {
+  // Branches with no nodes yet still show up — as a "coming soon" card
+  // rather than just vanishing — so a branch that exists (e.g. shows
+  // as a ghost nebula on the map) always has something to click through
+  // to here instead of silently having nothing to show for it.
   const cards = Object.keys(BRANCHES)
-    .map(branchId => ({ branchId, items: CATALOG_NODES.filter(n => n.branch === branchId) }))
-    .filter(g => g.items.length > 0);
+    .map(branchId => ({ branchId, items: CATALOG_NODES.filter(n => n.branch === branchId) }));
 
   libraryResultsEl.innerHTML = `
     <div class="library-branch-grid">
       ${cards.map(g => {
         const branch = BRANCHES[g.branchId];
         const addedCount = g.items.filter(n => isNodeAdded(n.id)).length;
+        const comingSoon = g.items.length === 0;
         return `
-          <button type="button" class="library-branch-card" data-branch="${g.branchId}" style="--branch-color:${branch.color}">
+          <button type="button" class="library-branch-card${comingSoon ? " coming-soon" : ""}" data-branch="${g.branchId}" style="--branch-color:${branch.color}">
             <span class="branch-dot" style="background:${branch.color}"></span>
             <span class="library-branch-card-label">${branch.label}</span>
-            <span class="library-branch-card-count">${addedCount ? `${addedCount}/${g.items.length} added` : `${g.items.length} skill${g.items.length === 1 ? "" : "s"}`}</span>
+            <span class="library-branch-card-count">${comingSoon ? "Coming soon" : (addedCount ? `${addedCount}/${g.items.length} added` : `${g.items.length} skill${g.items.length === 1 ? "" : "s"}`)}</span>
           </button>
         `;
       }).join("")}
@@ -132,6 +138,7 @@ function renderBranchPreview(branchId) {
   const items = CATALOG_NODES.filter(n => n.branch === branchId);
   const remaining = items.filter(n => !isNodeAdded(n.id));
   const added = items.filter(n => isNodeAdded(n.id));
+  const comingSoon = items.length === 0;
 
   libraryResultsEl.innerHTML = `
     <button type="button" class="library-branch-back">&larr; All branches</button>
@@ -141,15 +148,17 @@ function renderBranchPreview(branchId) {
           <span class="branch-dot" style="background:${branch.color}"></span>
           ${branch.label}
         </h3>
+        ${comingSoon ? "" : `
         <div class="library-branch-bulk-actions">
           ${remaining.length ? `<button type="button" class="library-add-branch-btn">Add all (${remaining.length})</button>` : ""}
           ${added.length ? `<button type="button" class="library-remove-branch-btn">Remove all (${added.length})</button>` : ""}
-        </div>
+        </div>`}
       </div>
+      ${comingSoon ? `<p class="library-empty">Coming soon — nothing added to this branch yet.</p>` : `
       ${items.some(n => n.dependsOn.some(id => items.some(i => i.id === id))) ? `
         <p class="library-branch-note">Some of these depend on each other — adding the whole branch at once avoids one getting stuck waiting on a sibling you never added.</p>
       ` : ""}
-      ${branchNodeItemsHtml(items)}
+      ${branchNodeItemsHtml(items)}`}
     </div>
   `;
 

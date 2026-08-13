@@ -1,12 +1,27 @@
 // ---- SVG rendering: background stars, connections, nodes, zoom/pan ----
 
 const SVG_NS = "http://www.w3.org/2000/svg";
-const VIEWBOX_DEFAULT = { x: 0, y: 0, w: 4700, h: 3050 };
+// Computed from the actual packed branch layout (see
+// computeDefaultViewbox in library.js) rather than a fixed guess —
+// grows and shrinks automatically as branches/nodes are added.
+const VIEWBOX_DEFAULT = computeDefaultViewbox();
 
 let viewBox = { ...VIEWBOX_DEFAULT };
 let svg, nebulaLayer, starLayer, lineLayer, nodeLayer;
 let onNodeClick = () => {};
 const nodeGroups = {};
+
+// Nebula/ghost titles counter-scale against zoom so they read as the
+// same on-screen size whether you're fully zoomed out or partway in,
+// instead of shrinking into illegibility (or ballooning) with the
+// viewBox. Populated by renderNebulas/renderGhostBranch, applied by
+// updateLabelScale — see MIN/MAX_ZOOM_W below for the reason it's
+// tracked as a factor of svg.clientWidth rather than a fixed number.
+const zoomScaledLabels = [];
+
+function goToBranchInLibrary(branchId) {
+  window.location.href = `pages/library.html?branch=${encodeURIComponent(branchId)}`;
+}
 
 // How big the core star gets as a node advances — growth is part of
 // the "more lit up" feedback, not just opacity.
@@ -57,6 +72,13 @@ function initGraph(svgEl, handlers) {
   renderConnections();
   renderNodes();
   setupZoomPan();
+
+  // applyViewBox() ran before the labels above existed (so it had
+  // nothing to scale yet) and svg.clientWidth may not have been laid
+  // out at that point either — settle both now that everything's in
+  // the DOM, and keep them settled across orientation/window changes.
+  updateLabelScale();
+  window.addEventListener("resize", updateLabelScale);
 }
 
 // A soft tinted region behind each branch's cluster of stars, so the
@@ -80,8 +102,12 @@ function renderNebulas() {
     const minY = Math.min(...ys), maxY = Math.max(...ys);
     const cx = (minX + maxX) / 2;
     const cy = (minY + maxY) / 2;
-    const rx = (maxX - minX) / 2 + 130;
-    const ry = (maxY - minY) / 2 + 110;
+    // Kept identical to NEBULA_ELLIPSE_PAD_X/Y and NEBULA_LABEL_Y_GAP in
+    // library.js, which size branch packing around this exact shape —
+    // changing these without changing those (and re-verifying) reopens
+    // the label-overlap bug that padding was built to prevent.
+    const rx = (maxX - minX) / 2 + NEBULA_ELLIPSE_PAD_X;
+    const ry = (maxY - minY) / 2 + NEBULA_ELLIPSE_PAD_Y;
     const color = BRANCHES[branchId].color;
 
     const gradientId = `nebula-${branchId}`;
@@ -95,20 +121,33 @@ function renderNebulas() {
     gradient.append(stopCenter, stopEdge);
     defs.appendChild(gradient);
 
+    const group = createSvgEl("g", { class: "nebula-group" });
+    const titleEl = createSvgEl("title", {});
+    titleEl.textContent = `${BRANCHES[branchId].label} — open in the library`;
+
     const blob = createSvgEl("ellipse", {
       cx, cy, rx, ry,
       class: "nebula",
       fill: `url(#${gradientId})`
     });
-    nebulaLayer.appendChild(blob);
 
+    // No floor-clamp here — each branch has its own local anchor now
+    // (not a single shared coordinate system), so a flat minimum y was
+    // a leftover from the old single-grid layout: for small/shallow
+    // branches it silently pulled the title down from its correct spot
+    // above the ellipse to right on top of the branch's own nodes.
     const label = createSvgEl("text", {
-      x: cx, y: Math.max(cy - ry + 26, 22),
+      x: cx, y: cy - ry + NEBULA_LABEL_Y_GAP,
       class: "nebula-label"
     });
     label.textContent = BRANCHES[branchId].label;
     label.style.fill = color;
-    nebulaLayer.appendChild(label);
+    label.style.fontSize = `${NEBULA_LABEL_FONT_PX}px`;
+    zoomScaledLabels.push({ el: label, basePx: NEBULA_LABEL_FONT_PX });
+
+    group.append(titleEl, blob, label);
+    group.addEventListener("click", () => goToBranchInLibrary(branchId));
+    nebulaLayer.appendChild(group);
   });
 }
 
@@ -122,21 +161,60 @@ function renderGhostBranch(branchId) {
   const group = createSvgEl("g", { class: "ghost-branch" });
 
   const title = createSvgEl("title", {});
-  title.textContent = `${BRANCHES[branchId].label} — nothing added yet. Browse the library to add your first node.`;
+  title.textContent = `${BRANCHES[branchId].label} — nothing added yet. Tap to browse this branch in the library.`;
 
   const ring = createSvgEl("circle", { cx: anchor.x, cy: anchor.y, r: 26, class: "ghost-branch-ring" });
   ring.style.stroke = color;
 
-  const label = createSvgEl("text", { x: anchor.x, y: anchor.y + 44, class: "ghost-branch-label" });
+  // Kept identical to GHOST_LABEL_Y_GAP in library.js — see the same
+  // note on the active nebula label above.
+  const label = createSvgEl("text", { x: anchor.x, y: anchor.y + GHOST_LABEL_Y_GAP, class: "ghost-branch-label" });
   label.textContent = BRANCHES[branchId].label;
   label.style.fill = color;
+  label.style.fontSize = `${GHOST_LABEL_FONT_PX}px`;
+  zoomScaledLabels.push({ el: label, basePx: GHOST_LABEL_FONT_PX });
 
   group.append(title, ring, label);
+  group.addEventListener("click", () => goToBranchInLibrary(branchId));
   nebulaLayer.appendChild(group);
+}
+
+// Ratios of VIEWBOX_DEFAULT.w, not fixed pixel widths — so "zoomed in
+// enough to show nodes" scales with however big the map actually is,
+// rather than a number tuned for one specific canvas size that stops
+// making sense once branches get added and the packed layout grows.
+const LOD_NODES_RATIO = 0.4;
+const LOD_LABELS_RATIO = 0.16;
+
+// Zoomed all the way out: just the nebulas and their names, like
+// glancing at a real star chart from a distance. Zoom in and the
+// stars themselves fade in; get in close and their names do too —
+// never all three at once, which is what kept text collisions
+// possible no matter how carefully individual labels were spaced.
+function updateZoomLOD() {
+  svg.classList.toggle("lod-nodes", viewBox.w <= VIEWBOX_DEFAULT.w * LOD_NODES_RATIO);
+  svg.classList.toggle("lod-labels", viewBox.w <= VIEWBOX_DEFAULT.w * LOD_LABELS_RATIO);
+}
+
+// SVG font-size lives in the same user-unit space as everything else,
+// so it scales with the viewBox by default — zoom out and it visually
+// shrinks, zoom in and it grows, same as any other shape. Recomputing
+// each label's font-size in inverse proportion to the current zoom
+// (in user-units per on-screen pixel) cancels that out, so nebula/
+// ghost titles stay the same readable size on screen at any zoom
+// level instead of shrinking away or ballooning as you zoom.
+function updateLabelScale() {
+  if (!svg.clientWidth) return;
+  const unitsPerPixel = viewBox.w / svg.clientWidth;
+  zoomScaledLabels.forEach(({ el, basePx }) => {
+    el.style.fontSize = `${(basePx * unitsPerPixel).toFixed(2)}px`;
+  });
 }
 
 function applyViewBox() {
   svg.setAttribute("viewBox", `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`);
+  updateZoomLOD();
+  updateLabelScale();
 }
 
 function resetView() {
@@ -151,8 +229,12 @@ function renderBackgroundStars() {
   const count = Math.round(130 * ((VIEWBOX_DEFAULT.w * VIEWBOX_DEFAULT.h) / (1200 * 750)));
   for (let i = 0; i < count; i++) {
     const star = createSvgEl("circle", {
-      cx: Math.random() * VIEWBOX_DEFAULT.w,
-      cy: Math.random() * VIEWBOX_DEFAULT.h,
+      // The packed layout can (and normally does) put the viewBox's
+      // origin somewhere other than (0,0) — without adding x/y back
+      // in, stars would only ever scatter across the top-left corner
+      // of the actual visible canvas instead of the whole thing.
+      cx: VIEWBOX_DEFAULT.x + Math.random() * VIEWBOX_DEFAULT.w,
+      cy: VIEWBOX_DEFAULT.y + Math.random() * VIEWBOX_DEFAULT.h,
       r: (Math.random() * 1.1 + 0.3).toFixed(2),
       class: "bg-star"
     });
@@ -340,7 +422,11 @@ function setupZoomPan() {
   }, { passive: false });
 
   svg.addEventListener("pointerdown", e => {
-    if (e.target.closest(".node")) return;
+    // Same reason .node is excluded: setPointerCapture below retargets
+    // the eventual pointerup (and the click derived from it) to the
+    // svg root itself, which silently swallowed clicks on nebulas and
+    // ghost branches before their own click listeners ever saw them.
+    if (e.target.closest(".node") || e.target.closest(".nebula-group") || e.target.closest(".ghost-branch")) return;
     dragging = true;
     last = { x: e.clientX, y: e.clientY };
     // Reading layout size once here, instead of on every pointermove,
@@ -383,14 +469,26 @@ function setupZoomPan() {
   svg.addEventListener("dblclick", resetView);
 }
 
+// Min zoom is a fixed "close enough to read a few nodes" size,
+// independent of how big the overall map is — max zoom is relative to
+// VIEWBOX_DEFAULT instead of a fixed number, since that now varies
+// with however many branches actually exist. Without this scaling,
+// zooming "out" on a map bigger than the old hardcoded max would
+// actually zoom IN, since the clamp would immediately shrink it back
+// down below the default view.
+const MIN_ZOOM_W = 320;
+const MIN_ZOOM_H = 210;
+const MAX_ZOOM_W = VIEWBOX_DEFAULT.w * 1.15;
+const MAX_ZOOM_H = VIEWBOX_DEFAULT.h * 1.15;
+
 function zoomAt(offsetX, offsetY, factor) {
   const scaleX = viewBox.w / svg.clientWidth;
   const scaleY = viewBox.h / svg.clientHeight;
   const svgX = viewBox.x + offsetX * scaleX;
   const svgY = viewBox.y + offsetY * scaleY;
 
-  const newW = Math.min(Math.max(viewBox.w * factor, 300), 2200);
-  const newH = Math.min(Math.max(viewBox.h * factor, 190), 1400);
+  const newW = Math.min(Math.max(viewBox.w * factor, MIN_ZOOM_W), MAX_ZOOM_W);
+  const newH = Math.min(Math.max(viewBox.h * factor, MIN_ZOOM_H), MAX_ZOOM_H);
 
   viewBox.x = svgX - (svgX - viewBox.x) * (newW / viewBox.w);
   viewBox.y = svgY - (svgY - viewBox.y) * (newH / viewBox.h);

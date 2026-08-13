@@ -6,13 +6,25 @@
 // Semantic-ish versioning: patch (x.y.Z) for small fixes/tweaks,
 // minor (x.Y.0) for real feature additions, major (X.0.0) reserved
 // for genuinely big overhauls.
-const APP_VERSION = "1.2.0";
+const APP_VERSION = "1.3.0";
 
 // One short line per change, newest entry first — shown in Settings
 // so it's easy to see what actually changed without digging through
 // git. Starts fresh from the switch to semver rather than backfilling
 // every earlier "vN" build.
 const CHANGELOG = [
+  {
+    version: "1.3.0",
+    date: "2026-08-13",
+    notes: [
+      "The map now starts empty — nothing's pre-added anymore, so what you see is only what you've chosen to track (browse the Library to add nodes, or whole branches at once)",
+      "Every node can now be removed from the map from its own panel, not just ones added from the Library",
+      "Library can now also remove whole branches at once, for easier cleanup",
+      "Skill tree layout rebuilt from scratch: nodes are spaced out in a proper branching tree instead of a jittered stack, and branches are packed so they never overlap, however many get added over time",
+      "Zoomed all the way out now shows just the nebulas and their names; zoom in to reveal nodes, then labels — no more cramped overlapping text",
+      "Bigger nebula names when fully zoomed out, easier to read at a glance"
+    ]
+  },
   {
     version: "1.2.0",
     date: "2026-08-11",

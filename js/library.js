@@ -233,41 +233,6 @@ const LIBRARY_NODES = [
     dependsOn: ["plank-hold"], quantityLabel: "seconds" }
 ];
 
-// Top-left corner each branch's tree grows down-and-out from. Every
-// branch — including the 5 that used to be a fixed, hand-placed
-// starter tree — is laid out algorithmically now (see
-// layoutBranchNodes below), so this is just a big, evenly-spaced grid
-// with enough room per cell that even a 4-deep dependency chain can't
-// bleed into its neighbor. See VIEWBOX_DEFAULT in graph.js, which is
-// sized to match.
-const BRANCH_ANCHORS = {
-  coding: { x: 350, y: 350 },
-  mentalism: { x: 1350, y: 350 },
-  people: { x: 2350, y: 350 },
-  life: { x: 3350, y: 350 },
-  random: { x: 4350, y: 350 },
-
-  "backend-apis": { x: 350, y: 950 },
-  "advanced-reading": { x: 1350, y: 950 },
-  "magic-memory": { x: 2350, y: 950 },
-  "negotiation-social": { x: 3350, y: 950 },
-
-  "home-money": { x: 350, y: 1550 },
-  "rest-time": { x: 1350, y: 1550 },
-  "astronomy-sky": { x: 2350, y: 1550 },
-  "earth-life-science": { x: 3350, y: 1550 },
-
-  "signals-communication": { x: 350, y: 2150 },
-  "wilderness-survival": { x: 1350, y: 2150 },
-  "sleep-nutrition-science": { x: 2350, y: 2150 },
-  "games-probability": { x: 3350, y: 2150 },
-
-  "history-culture": { x: 350, y: 2750 },
-  "mechanical-curiosities": { x: 1350, y: 2750 },
-  "sensory-craft": { x: 2350, y: 2750 },
-  "fitness-movement": { x: 3350, y: 2750 }
-};
-
 // ---- Tidy tree layout ----
 // A real parent-centered tree layout (the classic "tidy tree" shape),
 // not a rigid grid: each node sits centered directly above its own
@@ -283,11 +248,31 @@ const BRANCH_ANCHORS = {
 // hang from for placement purposes — the connection lines drawn in
 // graph.js still connect it to every real dependency, this only
 // affects where it sits.
-const LAYOUT_COLUMN_WIDTH = 130;
 const LAYOUT_ROW_HEIGHT = 120;
+const LAYOUT_COLUMN_GAP = 26;
+const LAYOUT_MIN_COLUMN_WIDTH = 90;
+
+// A plain character-count estimate rather than real canvas text
+// measurement — deliberately, so this gives the exact same numbers
+// whether it runs in the browser or in a plain Node script (the
+// verification passes below run in the latter). It errs wide on
+// purpose: slightly more space than a label strictly needs is
+// harmless, under-estimating is what causes real overlap.
+function estimateLabelWidth(text) {
+  return text.length * 6.4;
+}
 
 function layoutBranchNodes(branchNodes, anchor) {
   const idSet = new Set(branchNodes.map(n => n.id));
+  // Column width is sized to THIS branch's longest label, not a
+  // one-size-fits-all guess — a branch full of short names (Chess
+  // Fundamentals) packs tighter than one with long ones
+  // (Constellations & Star Navigation), and either way two labels on
+  // the same row can't collide.
+  const columnWidth = Math.max(
+    LAYOUT_MIN_COLUMN_WIDTH,
+    ...branchNodes.map(n => estimateLabelWidth(n.name) + LAYOUT_COLUMN_GAP)
+  );
   const childrenOf = {};
   const roots = [];
 
@@ -336,12 +321,206 @@ function layoutBranchNodes(branchNodes, anchor) {
   const positions = {};
   Object.keys(slot).forEach(id => {
     positions[id] = {
-      x: Math.round(anchor.x - ((totalWidth - 1) * LAYOUT_COLUMN_WIDTH) / 2 + slot[id] * LAYOUT_COLUMN_WIDTH),
+      x: Math.round(anchor.x + (slot[id] - totalWidth / 2) * columnWidth),
       y: Math.round(anchor.y + depth[id] * LAYOUT_ROW_HEIGHT)
     };
   });
 
   return positions;
+}
+
+// ---- Branch packing (semi-dynamic map layout) ----
+// Where each branch's tree actually sits is computed here, not
+// hand-placed — every branch gets a circular "hitbox" sized to how
+// much room its own full tree needs (layoutBranchNodes again, just
+// measured relative to a placeholder origin first), and those circles
+// get packed together as tightly as they'll fit without overlapping,
+// largest first. That's what replaces the old evenly-spaced grid with
+// something that actually looks like clusters of different sizes
+// instead of identical cells — and because it's computed fresh from
+// BRANCHES/NODES/LIBRARY_NODES on every load rather than baked into a
+// static table, adding a new branch or a pile of new nodes later just
+// reflows into the packing automatically, no coordinates to hand-edit.
+const BRANCH_PACK_PADDING = 90; // extra breathing room baked into each hitbox on top of its real shape
+const BRANCH_PACK_GAP = 70; // minimum breathing room between two different branches' hitboxes
+
+// Mirrors graph.js's renderNebulas/renderGhostBranch geometry exactly
+// (ellipse padding, label offsets, label font/letter-spacing) so the
+// hitbox measured here is the *actual* rendered shape, not a guess at
+// it — kept as shared constants specifically so the two can never
+// silently drift apart the way they did when the label font grew from
+// 13px to 32px without packing ever finding out.
+const NEBULA_ELLIPSE_PAD_X = 130;
+const NEBULA_ELLIPSE_PAD_Y = 110;
+const NEBULA_LABEL_Y_GAP = 26; // label sits this far above the ellipse's top edge
+// These are now the label's constant ON-SCREEN size (graph.js
+// counter-scales the actual rendered font-size against zoom to hold
+// it there) — 32/26 briefly landed here and, with 21 branches all
+// visible on the same screen at once, read as way too loud/crowded.
+// Sized instead like a normal UI label: nebula titles a bit bigger
+// and brighter since they're what's actually on your map, ghost
+// titles quieter since most branches sit as ghosts most of the time.
+const NEBULA_LABEL_FONT_PX = 15;
+const NEBULA_LABEL_LETTER_SPACING_EM = 0.1;
+const GHOST_LABEL_Y_GAP = 40; // label sits this far below the ghost ring's anchor point
+const GHOST_LABEL_FONT_PX = 11;
+const GHOST_LABEL_LETTER_SPACING_EM = 0.08;
+// Zoom can rest up to 1.15x past VIEWBOX_DEFAULT (see MAX_ZOOM_W in
+// graph.js) — since both labels counter-scale to stay a constant size
+// on screen, that headroom makes their actual SVG-unit width up to
+// 1.15x bigger too, so padding has to plan for that, not just their
+// size at the default resting zoom.
+const ZOOM_OUT_HEADROOM = 1.15;
+
+// A wider per-char ratio than estimateLabelWidth's 6.4/12 (~0.53/px)
+// baseline — these labels render with text-transform:uppercase, and
+// capital letters run measurably wider than the mixed-case node names
+// that ratio was tuned against, so reusing it as-is under-measured the
+// real rendered width and let titles overlap despite "passing" a
+// collision check against the wrong (too-narrow) number.
+function estimateBranchLabelWidth(text, fontPx, letterSpacingEm) {
+  const perChar = fontPx * 0.62 + fontPx * letterSpacingEm;
+  return text.length * perChar * ZOOM_OUT_HEADROOM;
+}
+
+// A branch's hitbox isn't centered on its own anchor point — the tidy
+// tree hangs down-and-out from its root row, so the anchor is really
+// the top-center, not the middle. This finds the true center (and the
+// radius needed to enclose the whole shape from it) so packing can
+// treat every branch as a normal circle regardless of its actual
+// lopsided shape.
+//
+// The radius has to cover three different things a branch can render
+// as, not just its node cluster: the active nebula's ellipse+label
+// (once every node in it is added) and the ghost ring+label (while
+// nothing is). Each is checked as actual corner points, not a rough
+// combined estimate — a label sitting off at the top edge of a tall
+// ellipse can stick out further from center than the node cluster
+// itself does, which a simple "cluster radius + label half-width"
+// formula misses entirely.
+function measureBranchHitbox(branchId) {
+  const branchNodes = NODES.concat(LIBRARY_NODES).filter(n => n.branch === branchId);
+  const positions = Object.values(layoutBranchNodes(branchNodes, { x: 0, y: 0 }));
+  const xs = positions.map(p => p.x), ys = positions.map(p => p.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const centerOffset = { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
+
+  // buildActiveNodes lays out only whichever subset of a branch is
+  // actually on the map, not the full branch — and a subset can need
+  // *more* horizontal room than the full branch does. Skip an active
+  // node's only in-branch dependency (added one at a time rather than
+  // via "Add whole branch") and it loses its parent slot, becoming its
+  // own independent root instead of nesting under one — so the column
+  // count a branch could ever need is bounded by its total node count,
+  // not by however many columns the fully-populated tree happens to
+  // use today. One extra column of headroom covers this cheaply without
+  // needing to actually search every possible subset for the exact
+  // worst case.
+  const columnWidth = Math.max(
+    LAYOUT_MIN_COLUMN_WIDTH,
+    ...branchNodes.map(n => estimateLabelWidth(n.name) + LAYOUT_COLUMN_GAP)
+  );
+
+  const ellipseCx = centerOffset.x, ellipseCy = centerOffset.y;
+  const rx = (maxX - minX) / 2 + NEBULA_ELLIPSE_PAD_X + columnWidth;
+  const ry = (maxY - minY) / 2 + NEBULA_ELLIPSE_PAD_Y;
+  const nebulaLabelY = ellipseCy - ry + NEBULA_LABEL_Y_GAP; // must match graph.js's render exactly, no floor-clamp
+  const nebulaLabelHalfW = estimateBranchLabelWidth(BRANCHES[branchId].label, NEBULA_LABEL_FONT_PX, NEBULA_LABEL_LETTER_SPACING_EM) / 2;
+  const nebulaLabelHalfH = NEBULA_LABEL_FONT_PX * 0.6;
+
+  const ghostLabelY = GHOST_LABEL_Y_GAP; // anchor is local (0,0) here
+  const ghostLabelHalfW = estimateBranchLabelWidth(BRANCHES[branchId].label, GHOST_LABEL_FONT_PX, GHOST_LABEL_LETTER_SPACING_EM) / 2;
+  const ghostLabelHalfH = GHOST_LABEL_FONT_PX * 0.6;
+
+  const points = [
+    // Ellipse's own extremes, not the raw node bounding box — rx/ry
+    // already include NEBULA_ELLIPSE_PAD_X/Y, and a bounding-box corner
+    // actually sits *inside* the ellipse, not on its edge, so using the
+    // unpadded node corners here silently underestimated the ellipse's
+    // real reach by the full padding amount.
+    { x: ellipseCx + rx, y: ellipseCy }, { x: ellipseCx - rx, y: ellipseCy },
+    { x: ellipseCx, y: ellipseCy + ry }, { x: ellipseCx, y: ellipseCy - ry },
+    { x: ellipseCx - nebulaLabelHalfW, y: nebulaLabelY - nebulaLabelHalfH },
+    { x: ellipseCx + nebulaLabelHalfW, y: nebulaLabelY - nebulaLabelHalfH },
+    { x: ellipseCx - nebulaLabelHalfW, y: nebulaLabelY + nebulaLabelHalfH },
+    { x: ellipseCx + nebulaLabelHalfW, y: nebulaLabelY + nebulaLabelHalfH },
+    { x: -ghostLabelHalfW, y: ghostLabelY - ghostLabelHalfH },
+    { x: ghostLabelHalfW, y: ghostLabelY - ghostLabelHalfH },
+    { x: -ghostLabelHalfW, y: ghostLabelY + ghostLabelHalfH },
+    { x: ghostLabelHalfW, y: ghostLabelY + ghostLabelHalfH }
+  ];
+  const radius = Math.max(...points.map(p => Math.hypot(p.x - centerOffset.x, p.y - centerOffset.y))) + BRANCH_PACK_PADDING;
+
+  return { radius, centerOffset };
+}
+
+// Greedy spiral packing: place the biggest circle first (at the
+// origin), then for every circle after it, walk outward along a
+// spiral from the origin and drop it at the first spot that doesn't
+// collide with anything already placed. A simple, well-understood
+// heuristic (the same basic idea word-cloud generators use) — not a
+// perfectly optimal packing, but compact, deterministic, and always
+// collision-free by construction.
+function packBranchCircles() {
+  const specs = Object.keys(BRANCHES).map(branchId => ({ branchId, ...measureBranchHitbox(branchId) }));
+  specs.sort((a, b) => b.radius - a.radius || a.branchId.localeCompare(b.branchId));
+
+  const placed = [];
+  specs.forEach((spec, index) => {
+    if (index === 0) {
+      placed.push({ ...spec, cx: 0, cy: 0 });
+      return;
+    }
+    const angleStep = 0.35;
+    const radiusStep = 5;
+    let angle = 0;
+    let dist = 0;
+    let cx = 0, cy = 0;
+    let guard = 0;
+    while (guard++ < 100000) {
+      cx = dist * Math.cos(angle);
+      cy = dist * Math.sin(angle);
+      const collides = placed.some(p => Math.hypot(p.cx - cx, p.cy - cy) < p.radius + spec.radius + BRANCH_PACK_GAP);
+      if (!collides) break;
+      angle += angleStep;
+      dist += radiusStep * (angleStep / (2 * Math.PI));
+    }
+    placed.push({ ...spec, cx, cy });
+  });
+
+  const anchors = {};
+  placed.forEach(p => {
+    anchors[p.branchId] = {
+      x: Math.round(p.cx - p.centerOffset.x),
+      y: Math.round(p.cy - p.centerOffset.y)
+    };
+  });
+  return anchors;
+}
+
+const BRANCH_ANCHORS = packBranchCircles();
+
+// The map's default viewBox, sized to whatever the packed layout
+// actually needs (including negative coordinates — packing grows
+// outward from the origin in every direction) rather than a fixed
+// guess. Shared with graph.js, which owns zoom/pan.
+function computeDefaultViewbox() {
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  Object.keys(BRANCHES).forEach(branchId => {
+    const branchNodes = NODES.concat(LIBRARY_NODES).filter(n => n.branch === branchId);
+    Object.values(layoutBranchNodes(branchNodes, BRANCH_ANCHORS[branchId])).forEach(p => {
+      minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+      minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+    });
+  });
+  const margin = 220;
+  return {
+    x: Math.floor(minX - margin),
+    y: Math.floor(minY - margin),
+    w: Math.ceil(maxX - minX + margin * 2),
+    h: Math.ceil(maxY - minY + margin * 2)
+  };
 }
 
 // Everything currently on your map — starter nodes and library nodes

@@ -310,23 +310,31 @@ main {
 }
 
 /* ---- Nebulas (branch theme regions) ---- */
+/* Clickable — tapping a nebula (whether it has nodes on the map or is
+   still a faint "ghost") jumps to that branch in the Library, as a
+   second way to discover/browse a branch besides the Library's own
+   grid. */
+.nebula-group {
+  cursor: pointer;
+}
+
 .nebula {
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .nebula-label {
-  font-size: 13px;
+  font-size: 15px;
   text-anchor: middle;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  opacity: 0.5;
-  pointer-events: none;
+  opacity: 0.6;
+  pointer-events: auto;
 }
 
 /* A branch that exists but has nothing added from it yet — a faint
    trace rather than nothing at all, so it stays discoverable. */
 .ghost-branch {
-  pointer-events: none;
+  cursor: pointer;
 }
 
 .ghost-branch-ring {
@@ -334,14 +342,19 @@ main {
   stroke-width: 1;
   stroke-dasharray: 2 5;
   animation: ghost-pulse 5s ease-in-out infinite;
+  /* "all" hit-tests the ring's full disc, not just its dashed stroke
+     line — fill:none would otherwise shrink the tappable area down to
+     a thin, hard-to-hit outline. */
+  pointer-events: all;
 }
 
 .ghost-branch-label {
-  font-size: 12px;
+  font-size: 11px;
   text-anchor: middle;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  opacity: 0.3;
+  opacity: 0.32;
+  pointer-events: auto;
 }
 
 @keyframes ghost-pulse {
@@ -349,10 +362,48 @@ main {
   50% { opacity: 0.38; }
 }
 
+.nebula-group:hover .nebula-label { opacity: 0.85; }
+.ghost-branch:hover .ghost-branch-label { opacity: 0.65; }
+.ghost-branch:hover .ghost-branch-ring { stroke-width: 1.6; }
+
 /* ---- Background stars ---- */
 .bg-star {
   fill: var(--ink);
   pointer-events: none;
+}
+
+/* ---- Level of detail (zoom-based reveal) ---- */
+/* Zoomed all the way out, the map is just nebula regions and their
+   names — like glancing at a real star chart from a distance.
+   Zooming in reveals the stars themselves, and only zooming in
+   further past that reveals their names. Never all three layers of
+   detail at once, which is what made label collisions unavoidable no
+   matter how carefully individual labels were spaced — see
+   updateZoomLOD in graph.js for the actual thresholds. */
+.node,
+.connection {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#star-map.lod-nodes .node,
+#star-map.lod-nodes .connection {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Specific enough to still win over the plain lod-nodes rule above,
+   so search-dimming keeps working once nodes are actually visible. */
+#star-map.lod-nodes .node.dimmed {
+  opacity: 0.15;
+}
+
+.node-label {
+  opacity: 0;
+}
+
+#star-map.lod-labels .node-label {
+  opacity: 0.82;
 }
 
 /* ---- Connections ---- */
@@ -1358,6 +1409,16 @@ label[for="suggest-text"] {
   box-shadow: var(--shadow-soft);
   border-color: var(--branch-color, var(--accent-warm));
   background: var(--bg-deep);
+}
+
+.library-branch-card.coming-soon {
+  opacity: 0.55;
+}
+
+.library-branch-card.coming-soon:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--border-soft);
 }
 
 .library-branch-card .branch-dot {
