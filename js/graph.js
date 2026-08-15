@@ -15,9 +15,21 @@ const nodeGroups = {};
 // same on-screen size whether you're fully zoomed out or partway in,
 // instead of shrinking into illegibility (or ballooning) with the
 // viewBox. Populated by renderNebulas/renderGhostBranch, applied by
-// updateLabelScale — see MIN/MAX_ZOOM_W below for the reason it's
-// tracked as a factor of svg.clientWidth rather than a fixed number.
+// updateZoomInvariantSizes — see MIN/MAX_ZOOM_W below for the reason
+// it's tracked as a factor of svg.clientWidth rather than a fixed
+// number.
 const zoomScaledLabels = [];
+
+// Same trick, for the "you're learning this" marker on a node (see
+// buildNodeGroup/.node-match-marker) — a node's actual radius is a
+// handful of user-units, which at the map's full default zoom-out
+// (viewBox thousands of units wide) renders as a sub-pixel dot no
+// matter how bright it's made. Counter-scaling its radius the same
+// way the labels counter-scale their font-size keeps it a genuinely
+// visible pinpoint at any zoom level, not just once you're zoomed in
+// far enough for real-scale geometry to matter again.
+const zoomScaledMarkers = [];
+const NODE_MATCH_MARKER_PX = 7;
 
 function goToBranchInLibrary(branchId) {
   window.location.href = `pages/library.html?branch=${encodeURIComponent(branchId)}`;
@@ -73,12 +85,12 @@ function initGraph(svgEl, handlers) {
   renderNodes();
   setupZoomPan();
 
-  // applyViewBox() ran before the labels above existed (so it had
-  // nothing to scale yet) and svg.clientWidth may not have been laid
-  // out at that point either — settle both now that everything's in
-  // the DOM, and keep them settled across orientation/window changes.
-  updateLabelScale();
-  window.addEventListener("resize", updateLabelScale);
+  // applyViewBox() ran before the labels/markers above existed (so it
+  // had nothing to scale yet) and svg.clientWidth may not have been
+  // laid out at that point either — settle both now that everything's
+  // in the DOM, and keep them settled across orientation/window changes.
+  updateZoomInvariantSizes();
+  window.addEventListener("resize", updateZoomInvariantSizes);
 }
 
 // A soft tinted region behind each branch's cluster of stars, so the
@@ -196,25 +208,29 @@ function updateZoomLOD() {
   svg.classList.toggle("lod-labels", viewBox.w <= VIEWBOX_DEFAULT.w * LOD_LABELS_RATIO);
 }
 
-// SVG font-size lives in the same user-unit space as everything else,
-// so it scales with the viewBox by default — zoom out and it visually
-// shrinks, zoom in and it grows, same as any other shape. Recomputing
-// each label's font-size in inverse proportion to the current zoom
-// (in user-units per on-screen pixel) cancels that out, so nebula/
-// ghost titles stay the same readable size on screen at any zoom
-// level instead of shrinking away or ballooning as you zoom.
-function updateLabelScale() {
+// SVG font-size/radius live in the same user-unit space as everything
+// else, so they scale with the viewBox by default — zoom out and they
+// visually shrink, zoom in and they grow, same as any other shape.
+// Recomputing each in inverse proportion to the current zoom (in
+// user-units per on-screen pixel) cancels that out, so nebula/ghost
+// titles and match-marker dots stay the same readable size on screen
+// at any zoom level, instead of shrinking away (or, for a marker at
+// real node scale, disappearing into a sub-pixel dot) as you zoom out.
+function updateZoomInvariantSizes() {
   if (!svg.clientWidth) return;
   const unitsPerPixel = viewBox.w / svg.clientWidth;
   zoomScaledLabels.forEach(({ el, basePx }) => {
     el.style.fontSize = `${(basePx * unitsPerPixel).toFixed(2)}px`;
+  });
+  zoomScaledMarkers.forEach(({ el, basePx }) => {
+    el.setAttribute("r", (basePx * unitsPerPixel).toFixed(2));
   });
 }
 
 function applyViewBox() {
   svg.setAttribute("viewBox", `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`);
   updateZoomLOD();
-  updateLabelScale();
+  updateZoomInvariantSizes();
 }
 
 function resetView() {
@@ -303,7 +319,15 @@ function buildNodeGroup(node) {
   const label = createSvgEl("text", { x: node.x, y: node.y + 22, class: "node-label" });
   label.textContent = node.name;
 
-  group.append(title, ...(startMarker ? [startMarker] : []), burst, halo, ring, core, dot, label);
+  // Hidden by default (see CSS) — only lit up while this node matches
+  // an active filter (the Learning toggle or search), and sized to a
+  // constant on-screen radius via zoomScaledMarkers so it's an actual
+  // visible pinpoint against the nebula clouds even fully zoomed out,
+  // where the node's own real-scale dot is imperceptibly small.
+  const matchMarker = createSvgEl("circle", { cx: node.x, cy: node.y, class: "node-match-marker" });
+  zoomScaledMarkers.push({ el: matchMarker, basePx: NODE_MATCH_MARKER_PX });
+
+  group.append(title, ...(startMarker ? [startMarker] : []), burst, halo, ring, core, dot, matchMarker, label);
   group.addEventListener("click", () => onNodeClick(node.id));
   group.addEventListener("keydown", e => {
     if (e.key === "Enter" || e.key === " ") {
@@ -336,8 +360,11 @@ function renderNodes() {
 // Re-reads every node's effective stage and updates just the
 // data-stage attribute on existing elements (rather than rebuilding
 // the graph), so CSS transitions animate the change smoothly. Also
-// hides each locked node's description from its hover tooltip, and
-// marks connections leading into a locked node as "blocked".
+// hides each locked node's description from its hover tooltip, marks
+// connections leading into a locked node as "blocked", and reapplies
+// the current search/learning-mode filter — a stage change can move a
+// node in or out of the learning band, so this is the one place both
+// need to stay in sync no matter what caused the refresh.
 function refreshNodeStates(progress) {
   ACTIVE_NODES.forEach(node => {
     const stage = effectiveStage(node, progress);
@@ -354,6 +381,8 @@ function refreshNodeStates(progress) {
     const blocked = target && effectiveStage(target, progress) === "locked";
     path.classList.toggle("blocked", blocked);
   });
+
+  updateNodeFilters();
 }
 
 // Removes a node (and any connection lines pointing into it) from the
@@ -363,6 +392,9 @@ function refreshNodeStates(progress) {
 function removeNodeFromGraph(nodeId) {
   const group = nodeGroups[nodeId];
   if (group) {
+    const marker = group.querySelector(".node-match-marker");
+    const markerIndex = zoomScaledMarkers.findIndex(m => m.el === marker);
+    if (markerIndex !== -1) zoomScaledMarkers.splice(markerIndex, 1);
     group.remove();
     delete nodeGroups[nodeId];
   }
@@ -385,36 +417,85 @@ function celebrateNode(nodeId) {
   burst.classList.add("bursting");
 }
 
-// Dims everything except nodes whose name matches the search term,
-// and gives matches a small glow so they're easy to spot at a glance.
-// Returns whether anything matched, so the caller can show a "nothing
-// found" hint for an empty result.
-function applySearchFilter(term) {
-  const q = term.trim().toLowerCase();
+// Two independent filters over the same node set — a text search and
+// the "Learning" toggle — combined here so either can dim nodes and
+// both stay correct together instead of one silently overwriting the
+// other's dimming. Nebulas/ghost branches are untouched by either;
+// this only ever affects individual node stars.
+let mapSearchTerm = "";
+let learningModeOn = false;
+
+// "Learning" means actively in progress — after "unlockable" (which
+// just means reachable, not started) and before "mastered" (already
+// done), so toggling it on hides both ends and leaves only the middle
+// of the journey visible.
+function isInLearningBand(stage) {
+  return stage === "curious" || stage === "learning" || stage === "comfortable" || stage === "solid";
+}
+
+// Recomputes dimmed/search-match state for every node from the current
+// search term + learning-mode setting together. Returns whether the
+// search term (if any) matched anything, so the caller can show a
+// "nothing found" hint.
+//
+// Node dots are normally hidden entirely until you zoom in past the
+// LOD threshold (see updateZoomLOD) — great for keeping the default
+// view clean, but it meant a match had literally nothing to show at
+// full zoom-out, dimmed or not. #star-map.filter-active (set below)
+// punches matches through that LOD hiding as small glowing pinpoints,
+// so "what am I learning" is answerable without zooming in at all;
+// everything else stays exactly as invisible as it always was.
+function updateNodeFilters() {
+  const q = mapSearchTerm.trim().toLowerCase();
+  const filterActive = !!q || learningModeOn;
   let anyMatch = false;
   ACTIVE_NODES.forEach(node => {
     const group = nodeGroups[node.id];
-    if (!q) {
-      group.classList.remove("dimmed", "search-match");
-    } else if (node.name.toLowerCase().includes(q)) {
-      group.classList.add("search-match");
-      group.classList.remove("dimmed");
-      anyMatch = true;
-    } else {
-      group.classList.add("dimmed");
-      group.classList.remove("search-match");
-    }
+    const passesSearch = !q || node.name.toLowerCase().includes(q);
+    const passesLearning = !learningModeOn || isInLearningBand(group.dataset.stage);
+    const visible = passesSearch && passesLearning;
+
+    group.classList.toggle("dimmed", filterActive && !visible);
+    group.classList.toggle("search-match", filterActive && visible);
+    if (visible && q) anyMatch = true;
   });
+  svg.classList.toggle("filter-active", filterActive);
   return anyMatch;
+}
+
+function applySearchFilter(term) {
+  mapSearchTerm = term;
+  return updateNodeFilters();
+}
+
+function setLearningMode(on) {
+  learningModeOn = on;
+  updateNodeFilters();
 }
 
 function setupZoomPan() {
   let dragging = false;
   let last = { x: 0, y: 0 };
-  let rect = null; // cached once per drag — see note below
+  let rect = null; // cached once per gesture — see note below
   let panRAF = null;
   let pendingDx = 0;
   let pendingDy = 0;
+
+  // Every pointer currently down on the map, keyed by pointerId — a
+  // single entry means an ordinary one-finger/mouse drag, two means a
+  // pinch. Real multi-touch, not a synthetic gesture event, so it
+  // works the same way across browsers/devices.
+  const activePointers = new Map();
+  let pinchDist = null;
+  let pinchMid = null;
+
+  function pinchPoints() {
+    const [a, b] = [...activePointers.values()];
+    return {
+      dist: Math.hypot(a.x - b.x, a.y - b.y),
+      mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
+    };
+  }
 
   svg.addEventListener("wheel", e => {
     e.preventDefault();
@@ -427,17 +508,57 @@ function setupZoomPan() {
     // svg root itself, which silently swallowed clicks on nebulas and
     // ghost branches before their own click listeners ever saw them.
     if (e.target.closest(".node") || e.target.closest(".nebula-group") || e.target.closest(".ghost-branch")) return;
-    dragging = true;
-    last = { x: e.clientX, y: e.clientY };
-    // Reading layout size once here, instead of on every pointermove,
-    // avoids forcing a synchronous reflow on each of the dozens of
-    // move events a single drag fires — that per-event reflow was
-    // the actual source of the panning lag.
-    rect = svg.getBoundingClientRect();
+
+    activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     svg.setPointerCapture(e.pointerId);
+    // Reading layout size once here, instead of on every move, avoids
+    // forcing a synchronous reflow on each of the dozens of move
+    // events a single gesture fires — that per-event reflow was the
+    // actual source of the panning lag.
+    rect = svg.getBoundingClientRect();
+
+    if (activePointers.size === 2) {
+      // A second finger landed mid-drag — hand off from panning to
+      // pinching instead of fighting over the same gesture.
+      dragging = false;
+      ({ dist: pinchDist, mid: pinchMid } = pinchPoints());
+    } else if (activePointers.size === 1) {
+      dragging = true;
+      last = { x: e.clientX, y: e.clientY };
+    }
   });
 
   svg.addEventListener("pointermove", e => {
+    if (!activePointers.has(e.pointerId)) return;
+    activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (activePointers.size >= 2) {
+      const { dist, mid } = pinchPoints();
+      const factor = pinchDist / dist; // <1 = fingers spreading = zoom in, matches zoomAt's factor sense
+      const newW = Math.min(Math.max(viewBox.w * factor, MIN_ZOOM_W), MAX_ZOOM_W);
+      const newH = Math.min(Math.max(viewBox.h * factor, MIN_ZOOM_H), MAX_ZOOM_H);
+
+      // Keep the SVG-space point under the fingers' midpoint fixed on
+      // screen (the actual "pinch" feel), same anchoring math as
+      // zoomAt, then separately shift by however much that midpoint
+      // itself has moved since last frame, so dragging two fingers
+      // together (no distance change) still pans.
+      const scaleX = viewBox.w / rect.width, scaleY = viewBox.h / rect.height;
+      const svgX = viewBox.x + (mid.x - rect.left) * scaleX;
+      const svgY = viewBox.y + (mid.y - rect.top) * scaleY;
+      viewBox.x = svgX - (svgX - viewBox.x) * (newW / viewBox.w);
+      viewBox.y = svgY - (svgY - viewBox.y) * (newH / viewBox.h);
+      viewBox.w = newW;
+      viewBox.h = newH;
+      viewBox.x -= (mid.x - pinchMid.x) * (newW / rect.width);
+      viewBox.y -= (mid.y - pinchMid.y) * (newH / rect.height);
+      applyViewBox();
+
+      pinchDist = dist;
+      pinchMid = mid;
+      return;
+    }
+
     if (!dragging) return;
     pendingDx += (e.clientX - last.x) * (viewBox.w / rect.width);
     pendingDy += (e.clientY - last.y) * (viewBox.h / rect.height);
@@ -459,12 +580,27 @@ function setupZoomPan() {
     }
   });
 
-  const endDrag = () => {
-    dragging = false;
-    rect = null;
+  const endDrag = e => {
+    if (e && activePointers.has(e.pointerId)) activePointers.delete(e.pointerId);
+
+    if (activePointers.size === 1) {
+      // One finger lifted out of a pinch — resume as an ordinary drag
+      // from whichever finger is still down, instead of stopping dead.
+      const [remaining] = activePointers.values();
+      dragging = true;
+      last = { ...remaining };
+      pinchDist = null;
+      pinchMid = null;
+    } else {
+      dragging = false;
+      pinchDist = null;
+      pinchMid = null;
+      if (activePointers.size === 0) rect = null;
+    }
   };
 
   svg.addEventListener("pointerup", endDrag);
+  svg.addEventListener("pointercancel", endDrag);
   svg.addEventListener("pointerleave", endDrag);
   svg.addEventListener("dblclick", resetView);
 }

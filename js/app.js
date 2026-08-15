@@ -23,6 +23,7 @@ function runMapPage(state) {
   const panelEl = document.getElementById("side-panel");
   const toastContainerEl = document.getElementById("toast-container");
   const mapSearchInput = document.getElementById("map-search-input");
+  const learningToggleBtn = document.getElementById("learning-toggle");
   const zoomInBtn = document.getElementById("zoom-in");
   const zoomOutBtn = document.getElementById("zoom-out");
 
@@ -164,5 +165,11 @@ function runMapPage(state) {
     } else {
       searchEmptyEl.hidden = true;
     }
+  });
+
+  learningToggleBtn.addEventListener("click", () => {
+    const on = learningToggleBtn.getAttribute("aria-pressed") !== "true";
+    learningToggleBtn.setAttribute("aria-pressed", String(on));
+    setLearningMode(on);
   });
 }

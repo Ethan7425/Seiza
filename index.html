@@ -32,7 +32,10 @@
   <main>
     <div class="graph-wrap">
       <div class="map-search">
-        <input type="text" id="map-search-input" placeholder="Search the sky...">
+        <div class="map-search-row">
+          <input type="text" id="map-search-input" placeholder="Search the sky...">
+          <button type="button" id="learning-toggle" class="learning-toggle-btn" aria-pressed="false" title="Show only what you're actively learning">Learning</button>
+        </div>
         <p class="map-search-empty" id="map-search-empty" hidden>
           No node called "<span id="map-search-empty-term"></span>" yet.
           <a href="pages/suggest.html">Suggest it?</a>

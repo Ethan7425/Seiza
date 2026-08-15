@@ -277,6 +277,12 @@ main {
   z-index: 2;
 }
 
+.map-search-row {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
 .map-search input {
   width: 12rem;
   padding: 0.4rem 0.7rem;
@@ -286,6 +292,30 @@ main {
   color: var(--ink);
   font-family: inherit;
   font-size: 0.8rem;
+}
+
+.learning-toggle-btn {
+  flex-shrink: 0;
+  padding: 0.4rem 0.6rem;
+  background: var(--bg-deep);
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  color: var(--ink-faint);
+  font-family: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.learning-toggle-btn:hover {
+  border-color: var(--accent-warm);
+  color: var(--ink);
+}
+
+.learning-toggle-btn[aria-pressed="true"] {
+  color: var(--accent-warm);
+  border-color: var(--accent-warm);
+  background: color-mix(in srgb, var(--accent-warm) 16%, var(--bg-deep));
 }
 
 .map-search input:focus {
@@ -398,6 +428,18 @@ main {
   opacity: 0.15;
 }
 
+/* A search/learning-mode match punches through the zoom-out hiding
+   above as a small glowing pinpoint, independent of the lod-nodes
+   threshold — otherwise "what am I learning" had nothing to show
+   until you zoomed in far enough to cross that threshold anyway,
+   defeating the point of a toggle you can check at a glance. Nothing
+   else is affected: everything that isn't a match stays exactly as
+   hidden zoomed-out as it always was. */
+#star-map.filter-active .node.search-match {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .node-label {
   opacity: 0;
 }
@@ -427,13 +469,42 @@ main {
   transition: opacity 0.4s ease;
 }
 
-/* Map search: fade out everything except name matches. */
-.node.dimmed {
-  opacity: 0.15;
-}
-
+/* Search/learning-mode dimming and the match glow itself both live in
+   the LOD block above (#star-map.lod-nodes .node.dimmed and
+   #star-map.filter-active .node.search-match) — a plain unscoped
+   .node.dimmed rule used to live here too, and because two classes
+   beats the base .node rule's one class on specificity, it was
+   silently winning regardless of LOD/zoom state: dimmed nodes leaked
+   through as a faint haze at full zoom-out while the actual matches
+   stayed invisible, the exact opposite of the intended effect. */
 .node.search-match {
   filter: drop-shadow(0 0 6px var(--accent-warm));
+}
+
+/* The actual node dot is real map-scale geometry — a handful of user
+   units, which at full zoom-out (a viewBox thousands of units wide)
+   renders as a sub-pixel speck no matter its opacity. This marker
+   counter-scales to a constant on-screen radius (see
+   zoomScaledMarkers/updateZoomInvariantSizes in graph.js) instead, so
+   a match is an actually-visible bright pinpoint against the nebula
+   clouds at any zoom level, not just once you're zoomed in far enough
+   for real-scale geometry to read at all. */
+.node-match-marker {
+  opacity: 0;
+  pointer-events: none;
+  fill: var(--accent-warm);
+}
+
+.node.search-match .node-match-marker {
+  opacity: 1;
+  pointer-events: auto;
+  cursor: pointer;
+  animation: match-marker-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes match-marker-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
 }
 
 /* One-shot ring burst played when a node reaches "mastered". */
