@@ -9,6 +9,9 @@
   <link rel="icon" type="image/svg+xml" href="../favicon.svg">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0d0a1f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Seiza">
 </head>
 <body>
 
@@ -23,7 +26,13 @@
       </div>
     </div>
 
-    <div id="achievements-grid" class="achievements-grid"></div>
+    <div id="achievements-grid" class="achievements-grid">
+      <div class="loading-skel" aria-hidden="true">
+        <div class="loading-skel-bar"></div>
+        <div class="loading-skel-bar"></div>
+        <div class="loading-skel-bar"></div>
+      </div>
+    </div>
   </div>
 
   <nav class="tab-bar">
@@ -93,5 +102,6 @@
     })();
   </script>
   <script src="../js/registerSW.js"></script>
+  <script src="../js/edgeSwipeBack.js"></script>
 </body>
 </html>

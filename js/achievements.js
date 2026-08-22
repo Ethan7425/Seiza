@@ -79,12 +79,6 @@ const ACHIEVEMENTS = [
     check: state => state.addedLibraryIds.length >= 10
   },
   {
-    id: "note-taker",
-    name: "Note Taker",
-    description: "Write notes on 5 different nodes.",
-    check: state => Object.values(state.progress).filter(e => e.notes && e.notes.trim()).length >= 5
-  },
-  {
     id: "evidence-based",
     name: "Evidence-Based",
     description: "Log 10 pieces of evidence, across any nodes.",

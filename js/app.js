@@ -45,6 +45,7 @@ function runMapPage(state) {
   });
   initToasts(toastContainerEl);
   refreshAll();
+  document.getElementById("map-loading")?.remove();
 
   function handleStageChange(nodeId, newStage) {
     const unlockedBefore = new Set(

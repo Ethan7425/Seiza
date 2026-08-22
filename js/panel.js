@@ -1,6 +1,7 @@
 // ---- Side panel: node detail view + stage stepper + notes/evidence ----
 
 let panelContainer;
+let panelContentEl;
 let panelBackdropEl;
 let onStageChange = () => {};
 let onProofAdd = () => {};
@@ -10,6 +11,13 @@ let onQuantityChange = () => {};
 
 function initPanel(el, handlers) {
   panelContainer = el;
+  // The handle (js/edgeSwipeBack-style drag-to-dismiss — see the mobile
+  // media query) needs a static sibling that never gets clobbered by a
+  // render, so panel content renders into this inner container instead
+  // of directly onto panelContainer. Every panelContainer.querySelector
+  // call below still resolves fine — it searches all descendants, not
+  // just direct children.
+  panelContentEl = document.getElementById("panel-content") || panelContainer;
   panelBackdropEl = document.getElementById("panel-backdrop");
   onStageChange = handlers.onStageChange;
   onProofAdd = handlers.onProofAdd;
@@ -20,6 +28,48 @@ function initPanel(el, handlers) {
   if (panelBackdropEl) {
     panelBackdropEl.addEventListener("click", closePanel);
   }
+
+  setupPanelDrag();
+}
+
+// Drag-to-dismiss on the mobile bottom-sheet's grab handle — a real
+// native bottom-sheet convention that was otherwise entirely missing
+// (the panel could only be closed via the × button or a backdrop tap).
+// Attached only to .panel-handle, not the whole panel, so it never
+// competes with scrolling the panel's own notes/evidence content.
+function setupPanelDrag() {
+  if (window.innerWidth > 760) return;
+  const handle = document.querySelector(".panel-handle");
+  if (!handle) return;
+
+  const THRESHOLD = 80;
+  let dragging = false;
+  let startY = 0;
+  let dy = 0;
+
+  handle.addEventListener("pointerdown", e => {
+    dragging = true;
+    startY = e.clientY;
+    dy = 0;
+    panelContainer.classList.add("dragging");
+  });
+
+  handle.addEventListener("pointermove", e => {
+    if (!dragging) return;
+    dy = Math.max(0, e.clientY - startY);
+    panelContainer.style.transform = `translateY(${dy}px)`;
+  });
+
+  const endDrag = () => {
+    if (!dragging) return;
+    dragging = false;
+    panelContainer.classList.remove("dragging");
+    panelContainer.style.transform = "";
+    if (dy >= THRESHOLD) closePanel();
+  };
+
+  handle.addEventListener("pointerup", endDrag);
+  handle.addEventListener("pointercancel", endDrag);
 }
 
 function formatDate(iso) {
@@ -154,7 +204,7 @@ function openPanel(nodeId, progress) {
   const stage = effectiveStage(node, progress);
   const isLocked = stage === "locked";
 
-  panelContainer.innerHTML = isLocked
+  panelContentEl.innerHTML = isLocked
     ? renderLockedPanel(node, progress)
     : renderUnlockedPanel(node, entry, stage, progress);
 

@@ -252,6 +252,16 @@ main {
   touch-action: none;
 }
 
+/* Mobile-only loading indicator — see the @media block below for the
+   visible state and js/app.js for the removal-on-load. */
+.map-loading {
+  display: none;
+}
+
+.loading-skel {
+  display: none;
+}
+
 .zoom-controls {
   position: absolute;
   right: 0.8rem;
@@ -698,6 +708,14 @@ main {
   opacity: 1;
   transform: translateX(0);
   pointer-events: auto;
+}
+
+/* Mobile-only bottom-sheet grab handle — see the @media block for the
+   visible state and js/panel.js's setupPanelDrag for the drag logic.
+   Docked desktop panel has no drag-to-dismiss concept, so this stays
+   hidden there. */
+.panel-handle {
+  display: none;
 }
 
 .panel-close {
@@ -1913,6 +1931,107 @@ label[for="suggest-text"] {
 
 /* ---- Responsive ---- */
 @media (max-width: 760px) {
+  /* Cross-document view transitions — every tab-bar tap, back-link tap,
+     and script-driven redirect currently does a plain full-page reload
+     with a hard blank-flash cut. This one at-rule makes the browser
+     crossfade between the old and new page automatically on every such
+     navigation, no per-page JS or markup needed. Unsupported browsers
+     (older Safari, desktop) just no-op back to today's instant nav —
+     zero regression risk. */
+  @view-transition {
+    navigation: auto;
+  }
+
+  /* The tab bar renders identically on every page — naming it gives
+     the browser a stable identity to carry across the navigation
+     instead of crossfading it as part of the whole-page snapshot,
+     which otherwise visibly double-images on the one thing that
+     actually changes, the active tab's color. header only exists as a
+     real element on the map page (sub-pages use .back-link instead),
+     so naming it here is harmless on every other page-pair — it only
+     falls back to a normal enter/exit fade where there's no match. */
+  .tab-bar {
+    view-transition-name: app-tabbar;
+  }
+
+  header {
+    view-transition-name: app-header;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.22s;
+  }
+
+  /* Real press feedback — nothing anywhere responded to touch before
+     this (zero :active rules existed). Mirrors the app's own existing
+     :hover inventory rather than inventing a new list. The tap-highlight
+     reset keeps iOS's default gray flash from muddying the new one. */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button:active:not(:disabled),
+  .btn-link:active,
+  .library-item:active,
+  .library-branch-card:active,
+  .achievement-card:active,
+  .admin-node-card:active,
+  .tab-bar-item:active {
+    transform: scale(0.96);
+    opacity: 0.85;
+    transition: transform 0.1s ease, opacity 0.1s ease;
+  }
+
+  /* .node click/pan handling in graph.js's setupZoomPan already
+     excludes .node from pointer-capture-based panning, so :active
+     fires cleanly here with no gesture interference. */
+  .node:active .node-core {
+    transform: scale(1.15);
+  }
+
+  /* Placed as the *static* initial HTML inside whatever container a
+     page's async loadState() eventually renders real content into —
+     gets auto-clobbered by that page's own `container.innerHTML = ...`
+     the instant it resolves, so there's nothing to wire up or tear
+     down. grid-column spans the full row when the parent happens to be
+     a CSS grid (achievements-grid); harmless elsewhere. */
+  .loading-skel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 1rem 0;
+    grid-column: 1 / -1;
+  }
+
+  .loading-skel-bar {
+    height: 14px;
+    border-radius: 4px;
+    background: var(--border-soft);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+
+  /* The map is the one page whose content region (#star-map) never
+     gets a wholesale innerHTML replace — initGraph() only ever appends
+     SVG layers — so it needs an explicit overlay instead of a static
+     child a render pass would naturally clobber. Removed by one line
+     in app.js's runMapPage once the graph actually has data. */
+  .map-loading {
+    display: flex;
+    position: absolute;
+    inset: 0;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .map-loading-star {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent-warm);
+    animation: breathe 1.6s ease-in-out infinite;
+  }
+
   html, body {
     height: 100%;
   }
@@ -1937,7 +2056,11 @@ label[for="suggest-text"] {
 
   header {
     flex-shrink: 0;
-    padding: 1rem 1.2rem;
+    /* apple-mobile-web-app-status-bar-style is black-translucent (see
+       <head>), which draws content under the status bar/notch instead
+       of iOS reserving opaque space for it — without this extra top
+       padding, the header sits right under the Dynamic Island. */
+    padding: calc(1rem + env(safe-area-inset-top)) 1.2rem 1rem;
     position: sticky;
     top: 0;
     z-index: 50;
@@ -1979,6 +2102,14 @@ label[for="suggest-text"] {
 
   #branch-progress .branch-bar-track {
     height: 3px;
+  }
+
+  /* The tab bar is opaque and sits in normal flex flow now (not a
+     fixed overlay with a hand-reserved gap) — without this, toasts
+     (the app's main feedback for mastery/unlocks/achievements) render
+     underneath it and are never actually seen. */
+  #toast-container {
+    bottom: calc(var(--tab-bar-height, 64px) + 0.8rem);
   }
 
   main {
@@ -2052,6 +2183,26 @@ label[for="suggest-text"] {
     transform: translateY(0);
   }
 
+  /* js/panel.js's setupPanelDrag drags this via inline transform while
+     live (.dragging suppresses the transition so it tracks the finger
+     with no lag); removing .dragging on release lets this transition
+     handle both the snap-back-to-open and the drag-released-close
+     smoothly, continuing from wherever the drag left off. */
+  .side-panel.dragging {
+    transition: none;
+  }
+
+  .panel-handle {
+    display: block;
+    width: 36px;
+    height: 4px;
+    margin: 0 auto 0.6rem;
+    border-radius: 999px;
+    background: var(--ink-faint);
+    opacity: 0.35;
+    touch-action: none;
+  }
+
   /* The tab bar is a normal flex child now (see below), not a
      position:fixed overlay with a hand-reserved gap elsewhere — so
      there's nothing here to keep in sync with its real height
@@ -2111,8 +2262,8 @@ label[for="suggest-text"] {
   }
 
   /* Comfortable tap targets for real buttons/links — but not the
-     small fixed-size icon controls, which get their min-height reset
-     back to "just their own explicit size" right below. */
+     small fixed-size icon controls, which get their own (still real,
+     just smaller) floor right below instead of this one. */
   button,
   .btn-link {
     min-height: 44px;
@@ -2122,11 +2273,15 @@ label[for="suggest-text"] {
     justify-content: center;
   }
 
+  /* Previously reset all the way to min-height:0 — below Apple's ~44pt
+     HIG minimum tap target. These are visually small icon buttons, but
+     the hit area doesn't have to match the icon size 1:1. */
   .zoom-controls button,
   .panel-close,
   .stage-btn,
   .proof-remove {
-    min-height: 0;
+    min-width: 40px;
+    min-height: 40px;
   }
 
   /* Secondary pages: this is now a real card-like component filling
@@ -2143,7 +2298,10 @@ label[for="suggest-text"] {
        it — which has nowhere to go (it's pinned to 100dvh) and just
        gets stuck half-scrolled. This stops the gesture right here. */
     overscroll-behavior: contain;
-    margin: 0.6rem 0.8rem;
+    /* These pages have no sticky <header> of their own (only index.html
+       does) — .back-link sits right at the top, so it needs the same
+       status-bar/notch clearance the header rule above gives index.html. */
+    margin: calc(0.6rem + env(safe-area-inset-top)) 0.8rem 0.6rem;
     padding: 1.4rem 1.2rem 1.8rem;
     background: var(--panel-bg);
     border: 1px solid var(--border-soft);
@@ -2160,7 +2318,23 @@ label[for="suggest-text"] {
     flex: 1;
     min-height: 0;
     overflow: hidden;
-    padding: 0.6rem 0.8rem;
+    /* Same status-bar/notch clearance as .admin-wrap above — these
+       pages have no sticky <header> of their own. */
+    padding: calc(0.6rem + env(safe-area-inset-top)) 0.8rem 0.6rem;
+  }
+
+  /* js/edgeSwipeBack.js drags these via inline transform while the
+     gesture is live (.dragging suppresses this transition so the
+     content tracks the finger with no lag), then removes .dragging on
+     release so this transition handles the snap-back-to-rest smoothly. */
+  .centered-page,
+  .admin-wrap {
+    transition: transform 0.25s ease;
+  }
+
+  .centered-page.dragging,
+  .admin-wrap.dragging {
+    transition: none;
   }
 
   .settings-card {

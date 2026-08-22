@@ -9,6 +9,9 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0d0a1f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Seiza">
 </head>
 <body>
 
@@ -42,6 +45,9 @@
         </p>
       </div>
       <svg id="star-map" viewBox="-3600 -3550 7360 7100" preserveAspectRatio="xMidYMid meet"></svg>
+      <div id="map-loading" class="map-loading" aria-hidden="true">
+        <div class="map-loading-star"></div>
+      </div>
       <div class="zoom-controls">
         <button id="zoom-in" aria-label="Zoom in">+</button>
         <button id="zoom-out" aria-label="Zoom out">&minus;</button>
@@ -49,7 +55,10 @@
     </div>
 
     <div id="panel-backdrop" class="panel-backdrop"></div>
-    <aside id="side-panel" class="side-panel"></aside>
+    <aside id="side-panel" class="side-panel">
+      <div class="panel-handle" aria-hidden="true"></div>
+      <div id="panel-content"></div>
+    </aside>
   </main>
 
   <div id="toast-container"></div>

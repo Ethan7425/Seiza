@@ -20,14 +20,8 @@ const nodeGroups = {};
 // number.
 const zoomScaledLabels = [];
 
-// Same trick, for the "you're learning this" marker on a node (see
-// buildNodeGroup/.node-match-marker) — a node's actual radius is a
-// handful of user-units, which at the map's full default zoom-out
-// (viewBox thousands of units wide) renders as a sub-pixel dot no
-// matter how bright it's made. Counter-scaling its radius the same
-// way the labels counter-scale their font-size keeps it a genuinely
-// visible pinpoint at any zoom level, not just once you're zoomed in
-// far enough for real-scale geometry to matter again.
+// Same trick, sizing the node "match marker" instead of a label's font
+// — see buildNodeGroup for why it needs it.
 const zoomScaledMarkers = [];
 const NODE_MATCH_MARKER_PX = 7;
 
