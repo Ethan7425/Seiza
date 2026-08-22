@@ -25,6 +25,13 @@ const zoomScaledLabels = [];
 const zoomScaledMarkers = [];
 const NODE_MATCH_MARKER_PX = 7;
 
+// Node titles were real map-scale text (flat 12px in SVG units) — only
+// actually comfortable to read once you were basically at max zoom-in,
+// since anywhere else in the "labels visible" LOD range they rendered
+// smaller than 12px. Counter-scaling like the nebula titles do keeps
+// them a consistent, readable size the entire time they're shown.
+const NODE_LABEL_FONT_PX = 12;
+
 function goToBranchInLibrary(branchId) {
   window.location.href = `pages/library.html?branch=${encodeURIComponent(branchId)}`;
 }
@@ -312,6 +319,8 @@ function buildNodeGroup(node) {
 
   const label = createSvgEl("text", { x: node.x, y: node.y + 22, class: "node-label" });
   label.textContent = node.name;
+  label.style.fontSize = `${NODE_LABEL_FONT_PX}px`;
+  zoomScaledLabels.push({ el: label, basePx: NODE_LABEL_FONT_PX });
 
   // Hidden by default (see CSS) — only lit up while this node matches
   // an active filter (the Learning toggle or search), and sized to a
@@ -389,6 +398,11 @@ function removeNodeFromGraph(nodeId) {
     const marker = group.querySelector(".node-match-marker");
     const markerIndex = zoomScaledMarkers.findIndex(m => m.el === marker);
     if (markerIndex !== -1) zoomScaledMarkers.splice(markerIndex, 1);
+
+    const label = group.querySelector(".node-label");
+    const labelIndex = zoomScaledLabels.findIndex(l => l.el === label);
+    if (labelIndex !== -1) zoomScaledLabels.splice(labelIndex, 1);
+
     group.remove();
     delete nodeGroups[nodeId];
   }
@@ -606,8 +620,16 @@ function setupZoomPan() {
 // zooming "out" on a map bigger than the old hardcoded max would
 // actually zoom IN, since the clamp would immediately shrink it back
 // down below the default view.
-const MIN_ZOOM_W = 320;
-const MIN_ZOOM_H = 210;
+//
+// The floor itself used to be one shared, landscape-shaped 320x210
+// rectangle — on a portrait phone that shape doesn't match the actual
+// screen, so pinching in would hit one axis's floor well before you'd
+// zoomed in as far as you wanted on the other, capping how close you
+// could actually get. Mobile gets its own smaller, portrait-shaped
+// floor instead.
+const isMobileViewport = window.innerWidth <= 760;
+const MIN_ZOOM_W = isMobileViewport ? 180 : 320;
+const MIN_ZOOM_H = isMobileViewport ? 380 : 210;
 const MAX_ZOOM_W = VIEWBOX_DEFAULT.w * 1.15;
 const MAX_ZOOM_H = VIEWBOX_DEFAULT.h * 1.15;
 

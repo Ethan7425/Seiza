@@ -127,26 +127,55 @@ async function loadState() {
 }
 
 // Writes to the local cache immediately, and to Supabase after a short
-// debounce — so typing in the notes textarea doesn't fire a network
-// request on every keystroke, just once shortly after you stop.
+// debounce — so a burst of rapid changes (e.g. stepping through stages)
+// doesn't fire a network request on every single one, just once
+// shortly after they stop.
 let saveTimer = null;
 let pendingState = null;
+
+// Tracked so a failed sync only announces itself once (not on every
+// debounced attempt while still offline) and so coming back online
+// only announces recovery if there was actually something to recover
+// from. showToast is feature-detected — only index.html loads
+// toast.js, so this stays a silent no-op on every other page rather
+// than a hard dependency.
+let lastSyncFailed = false;
 
 function saveState(state) {
   pendingState = state;
   writeLocalCache(state);
 
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(async () => {
-    const key = getProfileKey();
-    if (!key) return;
-    try {
-      await dbSaveProfile(key, pendingState);
-    } catch (e) {
-      console.error("Seiza: couldn't sync to the database (your changes are still saved locally).", e);
-    }
-  }, 600);
+  saveTimer = setTimeout(attemptSync, 600);
 }
+
+async function attemptSync() {
+  const key = getProfileKey();
+  if (!key || !pendingState) return;
+  try {
+    await dbSaveProfile(key, pendingState);
+    if (lastSyncFailed) {
+      lastSyncFailed = false;
+      if (typeof showToast === "function") showToast("Synced", "default");
+    }
+  } catch (e) {
+    console.error("Seiza: couldn't sync to the database (your changes are still saved locally).", e);
+    if (!lastSyncFailed && typeof showToast === "function") {
+      showToast("Offline — saved locally, will sync once you're back online", "default");
+    }
+    lastSyncFailed = true;
+  }
+}
+
+// The debounce timer only fires while the tab stays open and idle for
+// 600ms — reconnecting doesn't wait for that on its own. This is what
+// actually makes "will sync once you're back online" true rather than
+// just something that happens to work out next time something changes.
+window.addEventListener("online", () => {
+  if (!lastSyncFailed) return;
+  clearTimeout(saveTimer);
+  attemptSync();
+});
 
 // Immediate (non-debounced) save, for flows that redirect right after
 // — a create-new-profile, an import, or anything else that can't wait

@@ -318,12 +318,56 @@ function layoutBranchNodes(branchNodes, anchor) {
   });
   const totalWidth = cursor;
 
-  const positions = {};
+  const rawPositions = {};
   Object.keys(slot).forEach(id => {
-    positions[id] = {
+    rawPositions[id] = {
       x: Math.round(anchor.x + (slot[id] - totalWidth / 2) * columnWidth),
       y: Math.round(anchor.y + depth[id] * LAYOUT_ROW_HEIGHT)
     };
+  });
+
+  // Nodes on the same row never land on the same x (columnWidth already
+  // guarantees that), but two nodes in different subtrees/rows
+  // legitimately can — and when they do, a real constellation wouldn't
+  // line stars up in a perfect vertical column like that anyway, and
+  // their labels can end up stacked close enough to visually collide.
+  // Deterministically nudge every tie apart (alternating left/right,
+  // widening each retry) until no two nodes in this layout share an x
+  // at all — same technique as estimateLabelWidth's own "err wide, not
+  // narrow" rule: nothing here depends on measuring real text, so it
+  // gives identical results in the browser and in a plain Node check.
+  //
+  // Every node at the same dependency depth also sits on the exact
+  // same row (a flat multiple of LAYOUT_ROW_HEIGHT) — its own kind of
+  // rigid grid line, just horizontal instead of vertical. A small
+  // deterministic y offset breaks that up too, using a different hash
+  // multiplier than the x-nudge so the two aren't correlated (which
+  // would just trade a grid for a diagonal, still not natural-looking).
+  // Kept well inside LAYOUT_ROW_HEIGHT's 120-unit spacing so rows never
+  // actually blend into each other or reverse their top-to-bottom
+  // dependency order.
+  const usedX = new Set();
+  const positions = {};
+  Object.keys(rawPositions).forEach(id => {
+    const raw = rawPositions[id];
+    let hashX = 0;
+    for (let i = 0; i < id.length; i++) hashX = (hashX * 31 + id.charCodeAt(i)) % 1000;
+    let hashY = 0;
+    for (let i = 0; i < id.length; i++) hashY = (hashY * 37 + id.charCodeAt(i)) % 1000;
+
+    const step = 10 + (hashX % 15); // 10-24 units, well inside a same-row column's own clearance
+    const yJitter = (hashY % 41) - 20; // -20..20, well inside a row's own 120-unit clearance
+
+    let x = raw.x;
+    let attempt = 0;
+    let sign = hashX % 2 === 0 ? 1 : -1;
+    while (usedX.has(x)) {
+      attempt++;
+      x = raw.x + sign * step * attempt;
+      sign *= -1;
+    }
+    usedX.add(x);
+    positions[id] = { x, y: raw.y + yJitter };
   });
 
   return positions;
@@ -341,8 +385,14 @@ function layoutBranchNodes(branchNodes, anchor) {
 // BRANCHES/NODES/LIBRARY_NODES on every load rather than baked into a
 // static table, adding a new branch or a pile of new nodes later just
 // reflows into the packing automatically, no coordinates to hand-edit.
-const BRANCH_PACK_PADDING = 90; // extra breathing room baked into each hitbox on top of its real shape
-const BRANCH_PACK_GAP = 70; // minimum breathing room between two different branches' hitboxes
+// Widened from 90/70 — the map felt crowded even with zero literal
+// label/node overlaps (already verified), because branches simply sat
+// close together. This is shared, computed-once map data (not a
+// per-viewport CSS thing), so it spaces out the desktop map too, not
+// just mobile — more breathing room between clusters is a reasonable
+// trade there as well.
+const BRANCH_PACK_PADDING = 130; // extra breathing room baked into each hitbox on top of its real shape
+const BRANCH_PACK_GAP = 120; // minimum breathing room between two different branches' hitboxes
 
 // Mirrors graph.js's renderNebulas/renderGhostBranch geometry exactly
 // (ellipse padding, label offsets, label font/letter-spacing) so the

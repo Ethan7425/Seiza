@@ -6,13 +6,40 @@
 // Semantic-ish versioning: patch (x.y.Z) for small fixes/tweaks,
 // minor (x.Y.0) for real feature additions, major (X.0.0) reserved
 // for genuinely big overhauls.
-const APP_VERSION = "1.3.0";
+const APP_VERSION = "1.5.0";
 
 // One short line per change, newest entry first — shown in Settings
 // so it's easy to see what actually changed without digging through
 // git. Starts fresh from the switch to semver rather than backfilling
 // every earlier "vN" build.
 const CHANGELOG = [
+  {
+    version: "1.5.0",
+    date: "2026-08-22",
+    notes: [
+      "Node titles are now readable at a consistent size any time they're visible, not just at max zoom",
+      "Mobile pinch-zoom can now get meaningfully closer in, instead of stopping early",
+      "Ghost branches (nothing added yet) stay unnamed until you zoom in a bit on mobile, so the map opens on just the branches you've actually built",
+      "More breathing room between nebula clusters across the whole map",
+      "Nodes in the same branch no longer line up in perfect rows/columns — spaced more naturally and it fixes some remaining label overlaps",
+      "Confirm/alert popups (removing a node, deleting your profile, etc.) are now styled to match the app instead of a plain browser popup",
+      "You'll now get a heads-up if a change couldn't sync (saved locally either way), and a confirmation once it catches back up"
+    ]
+  },
+  {
+    version: "1.4.0",
+    date: "2026-08-22",
+    notes: [
+      "Mobile overhaul: page-to-page navigation now crossfades instead of a hard blank-flash reload",
+      "Buttons, cards, and nodes now respond visually the instant you touch them",
+      "Loading skeletons instead of blank screens while your data loads",
+      "Fixed: toasts (mastery/unlock/achievement) were rendering hidden underneath the tab bar",
+      "Content now clears the status bar/notch properly once added to your Home Screen",
+      "Swipe from the left edge to go back, on Home Screen launches",
+      "The side panel now has a drag handle — swipe it down to dismiss",
+      "A few small icon buttons were sized below a comfortable tap target — fixed"
+    ]
+  },
   {
     version: "1.3.0",
     date: "2026-08-13",

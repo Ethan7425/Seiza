@@ -79,6 +79,12 @@
     </div>
   </div>
 
+  <div id="dialog-backdrop" class="dialog-backdrop"></div>
+  <div id="dialog-box" class="dialog-box" role="alertdialog" aria-modal="true">
+    <p id="dialog-message" class="dialog-message"></p>
+    <div id="dialog-actions" class="dialog-actions"></div>
+  </div>
+
   <nav class="tab-bar">
     <a href="../index.html" class="tab-bar-item">
       <svg class="tab-bar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -115,6 +121,7 @@
   <script src="../js/db.js"></script>
   <script src="../js/storage.js"></script>
   <script src="../js/push.js"></script>
+  <script src="../js/dialog.js"></script>
   <script>
     let state;
     const reminderBtn = document.getElementById("reminder-toggle-btn");
@@ -125,6 +132,7 @@
         location.href = "welcome.html";
         return;
       }
+      initDialogs();
       document.getElementById("current-profile-name").textContent = state.profileName;
       updateReminderButton();
     })();
@@ -147,18 +155,18 @@
         saveState(state);
         updateReminderButton();
       } catch (e) {
-        alert(e.message);
+        await showAppAlert(e.message);
       }
       reminderBtn.disabled = false;
     });
 
     document.getElementById("test-notification-btn").addEventListener("click", async () => {
       if (!("serviceWorker" in navigator) || !("Notification" in window)) {
-        alert("Notifications aren't supported here — on iPhone, make sure Seiza is added to your Home Screen and opened from that icon.");
+        await showAppAlert("Notifications aren't supported here — on iPhone, make sure Seiza is added to your Home Screen and opened from that icon.");
         return;
       }
       if (Notification.permission !== "granted") {
-        alert('Notifications aren\'t allowed yet — tap "Enable reminders" first.');
+        await showAppAlert('Notifications aren\'t allowed yet — tap "Enable reminders" first.');
         return;
       }
       const registration = await navigator.serviceWorker.ready;
@@ -199,7 +207,7 @@
       if (!file) return;
 
       importStateFromFile(file, async imported => {
-        const confirmed = confirm("This will overwrite your current progress with the imported file. Continue?");
+        const confirmed = await showAppConfirm("This will overwrite your current progress with the imported file. Continue?", { confirmLabel: "Overwrite", danger: true });
         if (!confirmed) {
           importInput.value = "";
           return;
@@ -208,17 +216,17 @@
           await saveStateNow(getProfileKey(), imported);
           location.href = "../index.html";
         } catch (e) {
-          alert(`Couldn't save to the database: ${e.message}`);
+          await showAppAlert(`Couldn't save to the database: ${e.message}`);
           importInput.value = "";
         }
-      }, err => {
-        alert(`Couldn't import that file: ${err.message}`);
+      }, async err => {
+        await showAppAlert(`Couldn't import that file: ${err.message}`);
         importInput.value = "";
       });
     });
 
     document.getElementById("reset-btn").addEventListener("click", async () => {
-      const confirmed = confirm("This permanently deletes your profile and all node progress from the database. Export a backup first if you want to keep it. Continue?");
+      const confirmed = await showAppConfirm("This permanently deletes your profile and all node progress from the database. Export a backup first if you want to keep it. Continue?", { confirmLabel: "Delete", danger: true });
       if (!confirmed) return;
       await clearState();
       location.href = "welcome.html";

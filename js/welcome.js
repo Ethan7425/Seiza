@@ -63,7 +63,7 @@ function renderNameStep() {
     try {
       existingData = await onNameCheck(welcomeName);
     } catch (e) {
-      alert(`Couldn't reach the database: ${e.message}`);
+      await showAppAlert(`Couldn't reach the database: ${e.message}`);
       nextBtn.disabled = false;
       nextBtn.textContent = "Continue";
       return;
@@ -132,7 +132,7 @@ function renderPinStep() {
     try {
       ok = await onSignIn(welcomeName, pin, existingData);
     } catch (e) {
-      alert(`Couldn't reach the database: ${e.message}`);
+      await showAppAlert(`Couldn't reach the database: ${e.message}`);
       pinBtn.disabled = false;
       pinBtn.textContent = "Sign in";
       return;

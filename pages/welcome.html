@@ -25,10 +25,17 @@
     </div>
   </div>
 
+  <div id="dialog-backdrop" class="dialog-backdrop"></div>
+  <div id="dialog-box" class="dialog-box" role="alertdialog" aria-modal="true">
+    <p id="dialog-message" class="dialog-message"></p>
+    <div id="dialog-actions" class="dialog-actions"></div>
+  </div>
+
   <script src="../js/data.js"></script>
   <script src="../js/db.js"></script>
   <script src="../js/storage.js"></script>
   <script src="../js/welcome.js"></script>
+  <script src="../js/dialog.js"></script>
   <script>
     (async () => {
       const state = await loadState();
@@ -37,6 +44,7 @@
         return;
       }
 
+      initDialogs();
       initWelcome(document.getElementById("welcome-card"), {
         // Just a lookup — no side effects. Returns the profile's data
         // blob if that name exists, or null if it's free to create.
@@ -59,7 +67,7 @@
           try {
             await saveStateNow(name, newState);
           } catch (e) {
-            alert(`Couldn't reach the database: ${e.message}`);
+            await showAppAlert(`Couldn't reach the database: ${e.message}`);
             clearProfileKey();
             return;
           }

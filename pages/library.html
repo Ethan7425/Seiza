@@ -28,6 +28,12 @@
     </div>
   </div>
 
+  <div id="dialog-backdrop" class="dialog-backdrop"></div>
+  <div id="dialog-box" class="dialog-box" role="alertdialog" aria-modal="true">
+    <p id="dialog-message" class="dialog-message"></p>
+    <div id="dialog-actions" class="dialog-actions"></div>
+  </div>
+
   <nav class="tab-bar">
     <a href="../index.html" class="tab-bar-item">
       <svg class="tab-bar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -64,6 +70,7 @@
   <script src="../js/storage.js"></script>
   <script src="../js/library.js"></script>
   <script src="../js/libraryPage.js"></script>
+  <script src="../js/dialog.js"></script>
   <script>
     let state;
 
@@ -75,6 +82,7 @@
         location.href = "welcome.html";
         return;
       }
+      initDialogs();
       initLibraryPage(document.getElementById("library-content"), {
         onAdd: handleAddNode,
         onAddBranch: handleAddBranch,
@@ -144,18 +152,18 @@
       state.addedCoreNodeIds = state.addedCoreNodeIds.filter(id => id !== nodeId);
     }
 
-    function handleRemoveNode(nodeId) {
+    async function handleRemoveNode(nodeId) {
       if (!isAdded(nodeId)) return;
       const template = ALL_CATALOG_NODES.find(n => n.id === nodeId);
       if (!template) return;
 
       const blockers = findBlockingDependents([nodeId]);
       if (blockers.length) {
-        alert(`Can't remove "${template.name}" — ${blockers.map(b => b.name).join(", ")} still depend${blockers.length === 1 ? "s" : ""} on it.`);
+        await showAppAlert(`Can't remove "${template.name}" — ${blockers.map(b => b.name).join(", ")} still depend${blockers.length === 1 ? "s" : ""} on it.`);
         return;
       }
 
-      const confirmed = confirm(`Remove "${template.name}" from your map? This deletes its progress, notes, and evidence log. This can't be undone.`);
+      const confirmed = await showAppConfirm(`Remove "${template.name}" from your map? This deletes its progress, notes, and evidence log. This can't be undone.`, { confirmLabel: "Remove", danger: true });
       if (!confirmed) return;
 
       forgetNode(nodeId);
@@ -163,17 +171,17 @@
       refreshLibraryResults();
     }
 
-    function handleRemoveBranch(branchId) {
+    async function handleRemoveBranch(branchId) {
       const added = ALL_CATALOG_NODES.filter(n => n.branch === branchId && isAdded(n.id));
       if (!added.length) return;
 
       const blockers = findBlockingDependents(added.map(n => n.id));
       if (blockers.length) {
-        alert(`Can't remove the whole branch — ${blockers.map(b => b.name).join(", ")} (outside this branch) still depend${blockers.length === 1 ? "s" : ""} on something in it.`);
+        await showAppAlert(`Can't remove the whole branch — ${blockers.map(b => b.name).join(", ")} (outside this branch) still depend${blockers.length === 1 ? "s" : ""} on something in it.`);
         return;
       }
 
-      const confirmed = confirm(`Remove all ${added.length} added node${added.length === 1 ? "" : "s"} in "${BRANCHES[branchId].label}"? This deletes their progress, notes, and evidence logs. This can't be undone.`);
+      const confirmed = await showAppConfirm(`Remove all ${added.length} added node${added.length === 1 ? "" : "s"} in "${BRANCHES[branchId].label}"? This deletes their progress, notes, and evidence logs. This can't be undone.`, { confirmLabel: "Remove", danger: true });
       if (!confirmed) return;
 
       added.forEach(n => forgetNode(n.id));

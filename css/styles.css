@@ -1718,6 +1718,66 @@ label[for="suggest-text"] {
   color: var(--accent-warm);
 }
 
+/* ---- Custom confirm/alert dialogs (js/dialog.js) ---- */
+/* Replaces the browser's native confirm()/alert() — those render as a
+   flat OS popup with no styling control, breaking the app's whole
+   dark, custom-built look right at the moments (removing something,
+   an error) that most need to feel deliberate, not jarring. Sits above
+   everything, including toasts, since it blocks interaction until
+   dismissed. */
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(6, 4, 16, 0.65);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.dialog-backdrop.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.dialog-box {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.96);
+  width: min(360px, calc(100vw - 2.4rem));
+  z-index: 301;
+  background: var(--panel-bg);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 1.4rem;
+  box-shadow: var(--shadow-card);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.dialog-box.open {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  pointer-events: auto;
+}
+
+.dialog-message {
+  margin: 0 0 1.2rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
 /* ---- Profile page ---- */
 .profile-hero {
   display: flex;
@@ -2138,6 +2198,23 @@ label[for="suggest-text"] {
     flex: 1;
     min-height: 0;
     height: auto;
+  }
+
+  /* Most branches are ghosts (nothing added yet) for any real profile
+     — showing all of their names at once at full zoom-out is what
+     actually made the map feel crowded, not text size. Reuses the
+     existing lod-nodes threshold (the same moment node dots appear)
+     rather than a new one: fully zoomed out on mobile, only branches
+     you've actually built show a name; the faint rings still hint that
+     the rest exist. Desktop keeps ghost names always visible — there's
+     more screen space to spare there. */
+  .ghost-branch-label {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  #star-map.lod-nodes .ghost-branch-label {
+    opacity: 0.32;
   }
 
   .panel-backdrop {

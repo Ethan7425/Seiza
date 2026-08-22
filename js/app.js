@@ -44,6 +44,7 @@ function runMapPage(state) {
     onQuantityChange: handleQuantityChange
   });
   initToasts(toastContainerEl);
+  initDialogs();
   refreshAll();
   document.getElementById("map-loading")?.remove();
 
@@ -96,15 +97,16 @@ function runMapPage(state) {
     openPanel(nodeId, state.progress);
   }
 
-  function handleRemoveNode(nodeId) {
+  async function handleRemoveNode(nodeId) {
     const node = ACTIVE_NODES.find(n => n.id === nodeId);
     if (!node) return;
 
     const dependents = ACTIVE_NODES.filter(n => n.dependsOn.includes(nodeId));
     if (dependents.length) return;
 
-    const confirmed = confirm(
-      `Remove "${node.name}" from your map? This deletes its progress, notes, and evidence log. This can't be undone.`
+    const confirmed = await showAppConfirm(
+      `Remove "${node.name}" from your map? This deletes its progress, notes, and evidence log. This can't be undone.`,
+      { confirmLabel: "Remove", danger: true }
     );
     if (!confirmed) return;
 
